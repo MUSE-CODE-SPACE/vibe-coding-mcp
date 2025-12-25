@@ -1,19 +1,27 @@
-# Vibe Coding Documentation MCP
+# Vibe Coding Documentation MCP (MUSE)
 
 MCP server that automatically collects, summarizes, documents, and publishes code and design decisions created during vibe coding sessions.
 
 ## Features
 
-This MCP server provides 6 tools for managing vibe coding documentation:
+This MCP server provides 7 tools for managing vibe coding documentation:
 
 | Tool | Description |
 |------|-------------|
-| `collect_code_context` | Collects code blocks and conversation summaries into structured context |
-| `summarize_design_decisions` | Extracts key architectural and design decisions from conversation logs |
-| `generate_dev_document` | Generates README, DESIGN, TUTORIAL, or CHANGELOG documents in Markdown |
-| `normalize_for_platform` | Converts Markdown documents for Notion, GitHub Wiki, or Obsidian |
-| `publish_document` | Publishes generated documents to external platforms |
-| `create_session_log` | Creates daily or session-based vibe coding session logs |
+| `muse_collect_code_context` | Collects code blocks and conversation summaries into structured context |
+| `muse_summarize_design_decisions` | Extracts key architectural and design decisions from conversation logs |
+| `muse_generate_dev_document` | Generates README, DESIGN, TUTORIAL, CHANGELOG, API, or ARCHITECTURE documents |
+| `muse_normalize_for_platform` | Converts Markdown documents for Notion, GitHub Wiki, or Obsidian |
+| `muse_publish_document` | Publishes generated documents to external platforms |
+| `muse_create_session_log` | Creates daily or session-based vibe coding session logs |
+| `muse_analyze_code` | AST-based code analysis with Mermaid diagram generation |
+
+### Additional Features (v2.0)
+- **AST Parsing**: TypeScript, Python, Go code analysis
+- **Mermaid Diagrams**: Class, Flowchart, Sequence, ER, Architecture diagrams
+- **Multi-language**: Korean/English support
+- **6 Document Types**: README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
+- **6 Platforms**: Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
 
 ## Quick Start (HTTP Server)
 
