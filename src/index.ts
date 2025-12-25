@@ -17,6 +17,7 @@ import { generateDevDocument, generateDevDocumentSchema } from './tools/generate
 import { normalizeForPlatform, normalizeForPlatformSchema } from './tools/normalizeForPlatform.js';
 import { publishDocument, publishDocumentSchema } from './tools/publishDocument.js';
 import { createSessionLog, createSessionLogSchema } from './tools/createSessionLog.js';
+import { analyzeCodeTool, analyzeCodeSchema } from './tools/analyzeCode.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +53,7 @@ function createMCPServer(): Server {
         normalizeForPlatformSchema,
         publishDocumentSchema,
         createSessionLogSchema,
+        analyzeCodeSchema,
       ],
     };
   });
@@ -134,6 +136,18 @@ function createMCPServer(): Server {
           };
         }
 
+        case 'analyze_code': {
+          const result = analyzeCodeTool(args as any);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
@@ -158,8 +172,8 @@ function createMCPServer(): Server {
 app.get('/', (req: Request, res: Response) => {
   res.json({
     name: 'vibe-coding-mcp',
-    version: '1.0.0',
-    description: 'MCP server for vibe coding documentation',
+    version: '2.0.0',
+    description: 'MCP server for vibe coding documentation - Enhanced with AST analysis, Mermaid diagrams, multi-language support',
     status: 'running',
     tools: [
       'collect_code_context',
@@ -167,7 +181,15 @@ app.get('/', (req: Request, res: Response) => {
       'generate_dev_document',
       'normalize_for_platform',
       'publish_document',
-      'create_session_log'
+      'create_session_log',
+      'analyze_code'
+    ],
+    features: [
+      'AST parsing (TypeScript, Python, Go)',
+      'Mermaid diagram generation',
+      'Multi-language support (Korean/English)',
+      'Multiple document types (README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE)',
+      'Multiple platforms (Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord)'
     ]
   });
 });
