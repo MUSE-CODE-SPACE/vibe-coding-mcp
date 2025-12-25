@@ -102,6 +102,12 @@ export function generateDevDocument(input: GenerateDevDocumentInput): GenerateDe
     case 'CHANGELOG':
       document = generateChangelog(input, t, sections);
       break;
+    case 'API':
+      document = generateApiDoc(input, t, sections);
+      break;
+    case 'ARCHITECTURE':
+      document = generateArchitectureDoc(input, t, sections);
+      break;
   }
 
   const wordCount = document.split(/\s+/).filter(w => w.length > 0).length;
@@ -445,6 +451,181 @@ function generateChangelog(input: GenerateDevDocumentInput, t: typeof translatio
   return doc;
 }
 
+function generateApiDoc(input: GenerateDevDocumentInput, t: typeof translations.en, sectionList: string[]): string {
+  const title = input.title || 'API Reference';
+  let doc = `# ${title}\n\n`;
+
+  if (input.version) {
+    doc += `> Version ${input.version}\n\n`;
+  }
+
+  if (input.description) {
+    doc += `${input.description}\n\n`;
+  }
+
+  sectionList.push('Overview', 'Authentication', 'Endpoints', 'Error Codes');
+
+  doc += `## Overview\n\n`;
+  doc += `This document describes the API endpoints and their usage.\n\n`;
+
+  if (input.installation?.requirements) {
+    doc += `### Base URL\n\n`;
+    doc += `\`\`\`\n${input.installation.requirements[0] || 'https://api.example.com/v1'}\n\`\`\`\n\n`;
+  }
+
+  doc += `## Authentication\n\n`;
+  doc += `Include your API key in the request header:\n\n`;
+  doc += `\`\`\`\nAuthorization: Bearer YOUR_API_KEY\n\`\`\`\n\n`;
+
+  if (input.apiReference && input.apiReference.length > 0) {
+    doc += `## Endpoints\n\n`;
+
+    for (const api of input.apiReference) {
+      doc += `### ${api.name}\n\n`;
+      doc += `${api.description}\n\n`;
+
+      if (api.params && api.params.length > 0) {
+        doc += `#### ${t.parameters}\n\n`;
+        doc += `| Name | Type | Required | Description |\n`;
+        doc += `|------|------|----------|-------------|\n`;
+        for (const param of api.params) {
+          const parts = param.split(':').map(s => s.trim());
+          doc += `| \`${parts[0]}\` | ${parts[1] || 'string'} | ${parts[2] || 'No'} | ${parts[3] || '-'} |\n`;
+        }
+        doc += '\n';
+      }
+
+      if (api.returns) {
+        doc += `#### Response\n\n`;
+        doc += `\`\`\`json\n${api.returns}\n\`\`\`\n\n`;
+      }
+    }
+  }
+
+  doc += `## Error Codes\n\n`;
+  doc += `| Code | Description |\n`;
+  doc += `|------|-------------|\n`;
+  doc += `| 200 | Success |\n`;
+  doc += `| 400 | Bad Request |\n`;
+  doc += `| 401 | Unauthorized |\n`;
+  doc += `| 403 | Forbidden |\n`;
+  doc += `| 404 | Not Found |\n`;
+  doc += `| 500 | Internal Server Error |\n\n`;
+
+  doc += `---\n\n*Generated on ${formatDate()}*\n`;
+
+  return doc;
+}
+
+function generateArchitectureDoc(input: GenerateDevDocumentInput, t: typeof translations.en, sectionList: string[]): string {
+  const title = input.title || 'Architecture Document';
+  let doc = `# ${title}\n\n`;
+
+  doc += `| Field | Value |\n`;
+  doc += `|-------|-------|\n`;
+  doc += `| **Date** | ${formatDate()} |\n`;
+  if (input.author) doc += `| **Author** | ${input.author} |\n`;
+  if (input.version) doc += `| **Version** | ${input.version} |\n`;
+  doc += '\n';
+
+  sectionList.push('Overview', 'System Components', 'Data Flow', 'Technology Stack', 'Deployment');
+
+  doc += `## Overview\n\n`;
+  if (input.description) {
+    doc += `${input.description}\n\n`;
+  } else {
+    doc += `This document describes the system architecture.\n\n`;
+  }
+
+  doc += `## System Components\n\n`;
+  doc += `\`\`\`mermaid\nflowchart TB\n`;
+  doc += `    Client[Client Layer]\n`;
+  doc += `    API[API Gateway]\n`;
+  doc += `    Services[Service Layer]\n`;
+  doc += `    DB[(Database)]\n`;
+  doc += `    Client --> API\n`;
+  doc += `    API --> Services\n`;
+  doc += `    Services --> DB\n`;
+  doc += `\`\`\`\n\n`;
+
+  if (input.features && input.features.length > 0) {
+    doc += `### Components\n\n`;
+    for (const feature of input.features) {
+      doc += `- **${feature}**\n`;
+    }
+    doc += '\n';
+  }
+
+  doc += `## Data Flow\n\n`;
+  doc += `\`\`\`mermaid\nsequenceDiagram\n`;
+  doc += `    participant C as Client\n`;
+  doc += `    participant A as API\n`;
+  doc += `    participant S as Service\n`;
+  doc += `    participant D as Database\n`;
+  doc += `    C->>A: Request\n`;
+  doc += `    A->>S: Process\n`;
+  doc += `    S->>D: Query\n`;
+  doc += `    D-->>S: Result\n`;
+  doc += `    S-->>A: Response\n`;
+  doc += `    A-->>C: Response\n`;
+  doc += `\`\`\`\n\n`;
+
+  doc += `## Technology Stack\n\n`;
+  if (input.codeContexts && input.codeContexts.length > 0) {
+    const allTags = new Set<string>();
+    for (const ctx of input.codeContexts) {
+      ctx.tags?.forEach(tag => allTags.add(tag));
+    }
+    if (allTags.size > 0) {
+      doc += `| Category | Technology |\n`;
+      doc += `|----------|------------|\n`;
+      for (const tag of allTags) {
+        doc += `| ${tag} | - |\n`;
+      }
+      doc += '\n';
+    }
+  } else {
+    doc += `| Category | Technology |\n`;
+    doc += `|----------|------------|\n`;
+    doc += `| Frontend | - |\n`;
+    doc += `| Backend | - |\n`;
+    doc += `| Database | - |\n`;
+    doc += `| Infrastructure | - |\n\n`;
+  }
+
+  doc += `## Deployment\n\n`;
+  doc += `\`\`\`mermaid\nflowchart LR\n`;
+  doc += `    Dev[Development] --> Staging[Staging]\n`;
+  doc += `    Staging --> Prod[Production]\n`;
+  doc += `\`\`\`\n\n`;
+
+  if (input.designDecisions && input.designDecisions.length > 0) {
+    doc += `## Key Decisions\n\n`;
+    for (const decision of input.designDecisions) {
+      doc += `### ${decision.title}\n\n`;
+      doc += `${decision.description}\n\n`;
+      doc += `**Rationale:** ${decision.rationale}\n\n`;
+      if (decision.alternatives && decision.alternatives.length > 0) {
+        doc += `**Alternatives Considered:**\n`;
+        for (const alt of decision.alternatives) {
+          doc += `- ${alt}\n`;
+        }
+        doc += '\n';
+      }
+    }
+  }
+
+  if (input.customSections) {
+    for (const [sectionTitle, content] of Object.entries(input.customSections)) {
+      doc += `## ${sectionTitle}\n\n${content}\n\n`;
+    }
+  }
+
+  doc += `---\n\n*Generated on ${formatDate()}*\n`;
+
+  return doc;
+}
+
 export const generateDevDocumentSchema = {
   name: 'generate_dev_document',
   description: 'Generates README, DESIGN, TUTORIAL, or CHANGELOG documents in Markdown format. Supports multiple languages, badges, API reference, FAQ, and more.',
@@ -453,8 +634,8 @@ export const generateDevDocumentSchema = {
     properties: {
       documentType: {
         type: 'string',
-        enum: ['README', 'DESIGN', 'TUTORIAL', 'CHANGELOG'],
-        description: 'Type of document to generate'
+        enum: ['README', 'DESIGN', 'TUTORIAL', 'CHANGELOG', 'API', 'ARCHITECTURE'],
+        description: 'Type of document to generate (README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE)'
       },
       title: {
         type: 'string',

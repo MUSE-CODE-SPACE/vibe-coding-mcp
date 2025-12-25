@@ -27,10 +27,13 @@ export interface DesignDecision {
 }
 
 // 문서 타입
-export type DocumentType = 'README' | 'DESIGN' | 'TUTORIAL' | 'CHANGELOG';
+export type DocumentType = 'README' | 'DESIGN' | 'TUTORIAL' | 'CHANGELOG' | 'API' | 'ARCHITECTURE';
 
 // 플랫폼 타입
-export type Platform = 'notion' | 'github-wiki' | 'obsidian';
+export type Platform = 'notion' | 'github-wiki' | 'obsidian' | 'confluence' | 'slack' | 'discord';
+
+// 언어 타입
+export type Language = 'ko' | 'en';
 
 // 세션 로그
 export interface SessionLog {
