@@ -1,4 +1,4 @@
-import { DocumentType, CodeContext, DesignDecision, DocumentOptions } from '../types/index.js';
+import { DocumentType, CodeContext, DesignDecision } from '../types/index.js';
 import { codeBlockToMarkdown, designDecisionToMarkdown, formatDate } from '../utils/markdown.js';
 
 export interface GenerateDevDocumentInput {
@@ -10,115 +10,302 @@ export interface GenerateDevDocumentInput {
   designDecisions?: DesignDecision[];
   customSections?: Record<string, string>;
   includeTableOfContents?: boolean;
+  // 새로운 옵션들
+  language?: 'en' | 'ko';
+  author?: string;
+  version?: string;
+  license?: string;
+  repository?: string;
+  badges?: { label: string; message: string; color: string }[];
+  features?: string[];
+  installation?: { steps: string[]; requirements?: string[] };
+  apiReference?: { name: string; description: string; params?: string[]; returns?: string }[];
+  faq?: { question: string; answer: string }[];
+  contributors?: { name: string; role?: string }[];
 }
 
 export interface GenerateDevDocumentOutput {
   document: string;
   documentType: DocumentType;
   generatedAt: string;
+  wordCount: number;
+  sections: string[];
 }
 
+const translations = {
+  en: {
+    overview: 'Overview',
+    installation: 'Installation',
+    usage: 'Usage',
+    codeExamples: 'Code Examples',
+    designDecisions: 'Design Decisions',
+    features: 'Features',
+    prerequisites: 'Prerequisites',
+    gettingStarted: 'Getting Started',
+    summary: 'Summary',
+    apiReference: 'API Reference',
+    faq: 'FAQ',
+    contributing: 'Contributing',
+    license: 'License',
+    changelog: 'Changelog',
+    added: 'Added',
+    changed: 'Changed',
+    fixed: 'Fixed',
+    removed: 'Removed',
+    tableOfContents: 'Table of Contents',
+    parameters: 'Parameters',
+    returns: 'Returns',
+    step: 'Step'
+  },
+  ko: {
+    overview: '개요',
+    installation: '설치',
+    usage: '사용법',
+    codeExamples: '코드 예제',
+    designDecisions: '설계 결정',
+    features: '기능',
+    prerequisites: '사전 요구사항',
+    gettingStarted: '시작하기',
+    summary: '요약',
+    apiReference: 'API 레퍼런스',
+    faq: 'FAQ',
+    contributing: '기여하기',
+    license: '라이선스',
+    changelog: '변경 이력',
+    added: '추가됨',
+    changed: '변경됨',
+    fixed: '수정됨',
+    removed: '제거됨',
+    tableOfContents: '목차',
+    parameters: '매개변수',
+    returns: '반환값',
+    step: '단계'
+  }
+};
+
 export function generateDevDocument(input: GenerateDevDocumentInput): GenerateDevDocumentOutput {
+  const lang = input.language || 'en';
+  const t = translations[lang];
   let document = '';
+  const sections: string[] = [];
 
   switch (input.documentType) {
     case 'README':
-      document = generateReadme(input);
+      document = generateReadme(input, t, sections);
       break;
     case 'DESIGN':
-      document = generateDesignDoc(input);
+      document = generateDesignDoc(input, t, sections);
       break;
     case 'TUTORIAL':
-      document = generateTutorial(input);
+      document = generateTutorial(input, t, sections);
       break;
     case 'CHANGELOG':
-      document = generateChangelog(input);
+      document = generateChangelog(input, t, sections);
       break;
   }
+
+  const wordCount = document.split(/\s+/).filter(w => w.length > 0).length;
 
   return {
     document,
     documentType: input.documentType,
-    generatedAt: new Date().toISOString()
+    generatedAt: new Date().toISOString(),
+    wordCount,
+    sections
   };
 }
 
-function generateTableOfContents(sections: string[]): string {
-  let toc = '## Table of Contents\n\n';
+function generateBadges(badges: { label: string; message: string; color: string }[]): string {
+  return badges
+    .map(b => `![${b.label}](https://img.shields.io/badge/${encodeURIComponent(b.label)}-${encodeURIComponent(b.message)}-${b.color})`)
+    .join(' ') + '\n\n';
+}
+
+function generateTableOfContents(sections: string[], t: typeof translations.en): string {
+  let toc = `## ${t.tableOfContents}\n\n`;
   sections.forEach((section, index) => {
-    const slug = section.toLowerCase().replace(/\s+/g, '-');
+    const slug = section.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
     toc += `${index + 1}. [${section}](#${slug})\n`;
   });
   return toc + '\n';
 }
 
-function generateReadme(input: GenerateDevDocumentInput): string {
+function generateReadme(input: GenerateDevDocumentInput, t: typeof translations.en, sectionList: string[]): string {
   const title = input.title || input.projectName || 'Project';
   let doc = `# ${title}\n\n`;
 
+  // 배지
+  if (input.badges && input.badges.length > 0) {
+    doc += generateBadges(input.badges);
+  }
+
+  // 설명
   if (input.description) {
     doc += `${input.description}\n\n`;
   }
 
-  const sections: string[] = [];
+  // 목차를 위한 섹션 수집
+  const sections: string[] = [t.overview];
+  if (input.features) sections.push(t.features);
+  sections.push(t.installation, t.usage);
+  if (input.codeContexts?.length) sections.push(t.codeExamples);
+  if (input.apiReference?.length) sections.push(t.apiReference);
+  if (input.designDecisions?.length) sections.push(t.designDecisions);
+  if (input.faq?.length) sections.push(t.faq);
+  if (input.contributors?.length) sections.push(t.contributing);
+  if (input.license) sections.push(t.license);
+
+  sectionList.push(...sections);
 
   if (input.includeTableOfContents) {
-    sections.push('Overview', 'Installation', 'Usage', 'Code Examples', 'Design Decisions');
-    doc += generateTableOfContents(sections);
+    doc += generateTableOfContents(sections, t);
   }
 
-  doc += `## Overview\n\n`;
+  // 개요
+  doc += `## ${t.overview}\n\n`;
   if (input.codeContexts && input.codeContexts.length > 0) {
     doc += input.codeContexts[0].conversationSummary + '\n\n';
   } else {
     doc += `This document provides an overview of the ${title} project.\n\n`;
   }
 
-  doc += `## Installation\n\n`;
-  doc += '```bash\n# Installation instructions\nnpm install\n```\n\n';
+  // 기능
+  if (input.features && input.features.length > 0) {
+    doc += `## ${t.features}\n\n`;
+    for (const feature of input.features) {
+      doc += `- ${feature}\n`;
+    }
+    doc += '\n';
+  }
 
-  doc += `## Usage\n\n`;
+  // 설치
+  doc += `## ${t.installation}\n\n`;
+  if (input.installation) {
+    if (input.installation.requirements) {
+      doc += `### ${t.prerequisites}\n\n`;
+      for (const req of input.installation.requirements) {
+        doc += `- ${req}\n`;
+      }
+      doc += '\n';
+    }
+    doc += '```bash\n';
+    for (const step of input.installation.steps) {
+      doc += `${step}\n`;
+    }
+    doc += '```\n\n';
+  } else {
+    doc += '```bash\n# Installation\nnpm install\n```\n\n';
+  }
+
+  // 사용법
+  doc += `## ${t.usage}\n\n`;
   doc += 'Describe how to use the project here.\n\n';
 
+  // 코드 예제
   if (input.codeContexts && input.codeContexts.length > 0) {
-    doc += `## Code Examples\n\n`;
+    doc += `## ${t.codeExamples}\n\n`;
     for (const context of input.codeContexts) {
+      if (context.conversationSummary) {
+        doc += `### ${context.tags?.[0] || 'Example'}\n\n`;
+        doc += context.conversationSummary + '\n\n';
+      }
       for (const block of context.codeBlocks) {
         doc += codeBlockToMarkdown(block) + '\n\n';
       }
     }
   }
 
+  // API 레퍼런스
+  if (input.apiReference && input.apiReference.length > 0) {
+    doc += `## ${t.apiReference}\n\n`;
+    for (const api of input.apiReference) {
+      doc += `### \`${api.name}\`\n\n`;
+      doc += `${api.description}\n\n`;
+      if (api.params && api.params.length > 0) {
+        doc += `**${t.parameters}:**\n`;
+        for (const param of api.params) {
+          doc += `- ${param}\n`;
+        }
+        doc += '\n';
+      }
+      if (api.returns) {
+        doc += `**${t.returns}:** ${api.returns}\n\n`;
+      }
+    }
+  }
+
+  // 설계 결정
   if (input.designDecisions && input.designDecisions.length > 0) {
-    doc += `## Design Decisions\n\n`;
+    doc += `## ${t.designDecisions}\n\n`;
     for (const decision of input.designDecisions) {
       doc += designDecisionToMarkdown(decision) + '\n\n';
     }
   }
 
+  // FAQ
+  if (input.faq && input.faq.length > 0) {
+    doc += `## ${t.faq}\n\n`;
+    for (const item of input.faq) {
+      doc += `### ${item.question}\n\n`;
+      doc += `${item.answer}\n\n`;
+    }
+  }
+
+  // 커스텀 섹션
   if (input.customSections) {
     for (const [sectionTitle, content] of Object.entries(input.customSections)) {
       doc += `## ${sectionTitle}\n\n${content}\n\n`;
     }
   }
 
-  doc += `---\n\n*Generated on ${formatDate()}*\n`;
+  // 기여자
+  if (input.contributors && input.contributors.length > 0) {
+    doc += `## ${t.contributing}\n\n`;
+    for (const contrib of input.contributors) {
+      doc += `- **${contrib.name}**${contrib.role ? ` - ${contrib.role}` : ''}\n`;
+    }
+    doc += '\n';
+  }
+
+  // 라이선스
+  if (input.license) {
+    doc += `## ${t.license}\n\n`;
+    doc += `This project is licensed under the ${input.license} License.\n\n`;
+  }
+
+  // 푸터
+  doc += `---\n\n`;
+  if (input.author) {
+    doc += `Created by ${input.author}. `;
+  }
+  doc += `*Generated on ${formatDate()}*\n`;
 
   return doc;
 }
 
-function generateDesignDoc(input: GenerateDevDocumentInput): string {
+function generateDesignDoc(input: GenerateDevDocumentInput, t: typeof translations.en, sectionList: string[]): string {
   const title = input.title || 'Design Document';
   let doc = `# ${title}\n\n`;
 
-  doc += `**Date:** ${formatDate()}\n\n`;
+  doc += `| Field | Value |\n`;
+  doc += `|-------|-------|\n`;
+  doc += `| **Date** | ${formatDate()} |\n`;
+  if (input.author) doc += `| **Author** | ${input.author} |\n`;
+  if (input.version) doc += `| **Version** | ${input.version} |\n`;
+  doc += '\n';
+
+  sectionList.push('Summary', 'Architecture Overview', 'Key Decisions', 'Implementation Details');
 
   if (input.description) {
     doc += `## Summary\n\n${input.description}\n\n`;
   }
 
   doc += `## Architecture Overview\n\n`;
-  doc += 'Describe the overall architecture here.\n\n';
+  if (input.codeContexts && input.codeContexts.length > 0) {
+    doc += input.codeContexts[0].conversationSummary + '\n\n';
+  } else {
+    doc += 'Describe the overall architecture here.\n\n';
+  }
 
   if (input.designDecisions && input.designDecisions.length > 0) {
     doc += `## Key Decisions\n\n`;
@@ -141,7 +328,8 @@ function generateDesignDoc(input: GenerateDevDocumentInput): string {
   if (input.codeContexts && input.codeContexts.length > 0) {
     doc += `## Implementation Details\n\n`;
     for (const context of input.codeContexts) {
-      doc += `### ${context.timestamp}\n\n`;
+      const contextTitle = context.tags?.[0] || new Date(context.timestamp).toLocaleDateString();
+      doc += `### ${contextTitle}\n\n`;
       doc += context.conversationSummary + '\n\n';
       for (const block of context.codeBlocks) {
         doc += codeBlockToMarkdown(block) + '\n\n';
@@ -158,23 +346,35 @@ function generateDesignDoc(input: GenerateDevDocumentInput): string {
   return doc;
 }
 
-function generateTutorial(input: GenerateDevDocumentInput): string {
+function generateTutorial(input: GenerateDevDocumentInput, t: typeof translations.en, sectionList: string[]): string {
   const title = input.title || 'Tutorial';
   let doc = `# ${title}\n\n`;
 
   if (input.description) {
-    doc += `${input.description}\n\n`;
+    doc += `> ${input.description}\n\n`;
   }
 
-  doc += `## Prerequisites\n\n`;
-  doc += '- List prerequisites here\n\n';
+  sectionList.push(t.prerequisites, t.gettingStarted, t.summary);
 
-  doc += `## Getting Started\n\n`;
+  // 사전 요구사항
+  doc += `## ${t.prerequisites}\n\n`;
+  if (input.installation?.requirements) {
+    for (const req of input.installation.requirements) {
+      doc += `- ${req}\n`;
+    }
+  } else {
+    doc += '- List prerequisites here\n';
+  }
+  doc += '\n';
+
+  // 시작하기
+  doc += `## ${t.gettingStarted}\n\n`;
 
   if (input.codeContexts && input.codeContexts.length > 0) {
     let stepNumber = 1;
     for (const context of input.codeContexts) {
-      doc += `### Step ${stepNumber}: ${context.tags?.[0] || 'Next Step'}\n\n`;
+      const stepTitle = context.tags?.[0] || `${t.step} ${stepNumber}`;
+      doc += `### ${t.step} ${stepNumber}: ${stepTitle}\n\n`;
       doc += context.conversationSummary + '\n\n';
 
       for (const block of context.codeBlocks) {
@@ -184,8 +384,17 @@ function generateTutorial(input: GenerateDevDocumentInput): string {
     }
   }
 
-  doc += `## Summary\n\n`;
-  doc += 'Summarize what was learned in this tutorial.\n\n';
+  // 요약
+  doc += `## ${t.summary}\n\n`;
+  if (input.features) {
+    doc += 'In this tutorial, you learned:\n\n';
+    for (const feature of input.features) {
+      doc += `- ${feature}\n`;
+    }
+  } else {
+    doc += 'Summarize what was learned in this tutorial.\n';
+  }
+  doc += '\n';
 
   if (input.customSections) {
     for (const [sectionTitle, content] of Object.entries(input.customSections)) {
@@ -196,25 +405,33 @@ function generateTutorial(input: GenerateDevDocumentInput): string {
   return doc;
 }
 
-function generateChangelog(input: GenerateDevDocumentInput): string {
-  let doc = `# Changelog\n\n`;
+function generateChangelog(input: GenerateDevDocumentInput, t: typeof translations.en, sectionList: string[]): string {
+  let doc = `# ${t.changelog}\n\n`;
   doc += `All notable changes to this project will be documented in this file.\n\n`;
+  doc += `The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).\n\n`;
 
   const today = formatDate();
-  doc += `## [Unreleased] - ${today}\n\n`;
+  const version = input.version || 'Unreleased';
+
+  sectionList.push(`[${version}] - ${today}`);
+
+  doc += `## [${version}] - ${today}\n\n`;
 
   if (input.codeContexts && input.codeContexts.length > 0) {
-    doc += `### Added\n\n`;
+    doc += `### ${t.added}\n\n`;
     for (const context of input.codeContexts) {
       doc += `- ${context.conversationSummary}\n`;
+      if (context.tags && context.tags.length > 0) {
+        doc += `  - Tags: ${context.tags.join(', ')}\n`;
+      }
     }
     doc += '\n';
   }
 
   if (input.designDecisions && input.designDecisions.length > 0) {
-    doc += `### Changed\n\n`;
+    doc += `### ${t.changed}\n\n`;
     for (const decision of input.designDecisions) {
-      doc += `- ${decision.title}: ${decision.description}\n`;
+      doc += `- **${decision.title}**: ${decision.description.substring(0, 100)}${decision.description.length > 100 ? '...' : ''}\n`;
     }
     doc += '\n';
   }
@@ -230,7 +447,7 @@ function generateChangelog(input: GenerateDevDocumentInput): string {
 
 export const generateDevDocumentSchema = {
   name: 'generate_dev_document',
-  description: 'Generates README, DESIGN, TUTORIAL, or CHANGELOG documents in Markdown format.',
+  description: 'Generates README, DESIGN, TUTORIAL, or CHANGELOG documents in Markdown format. Supports multiple languages, badges, API reference, FAQ, and more.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -250,6 +467,87 @@ export const generateDevDocumentSchema = {
       description: {
         type: 'string',
         description: 'Project or document description'
+      },
+      language: {
+        type: 'string',
+        enum: ['en', 'ko'],
+        description: 'Language for section headers (default: en)'
+      },
+      author: {
+        type: 'string',
+        description: 'Author name'
+      },
+      version: {
+        type: 'string',
+        description: 'Version number'
+      },
+      license: {
+        type: 'string',
+        description: 'License type (e.g., MIT, Apache-2.0)'
+      },
+      repository: {
+        type: 'string',
+        description: 'Repository URL'
+      },
+      badges: {
+        type: 'array',
+        description: 'Shield.io badges',
+        items: {
+          type: 'object',
+          properties: {
+            label: { type: 'string' },
+            message: { type: 'string' },
+            color: { type: 'string' }
+          }
+        }
+      },
+      features: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'List of features'
+      },
+      installation: {
+        type: 'object',
+        description: 'Installation instructions',
+        properties: {
+          steps: { type: 'array', items: { type: 'string' } },
+          requirements: { type: 'array', items: { type: 'string' } }
+        }
+      },
+      apiReference: {
+        type: 'array',
+        description: 'API documentation',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            description: { type: 'string' },
+            params: { type: 'array', items: { type: 'string' } },
+            returns: { type: 'string' }
+          }
+        }
+      },
+      faq: {
+        type: 'array',
+        description: 'Frequently asked questions',
+        items: {
+          type: 'object',
+          properties: {
+            question: { type: 'string' },
+            answer: { type: 'string' }
+          }
+        }
+      },
+      contributors: {
+        type: 'array',
+        description: 'List of contributors',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            role: { type: 'string' }
+          }
+        }
       },
       codeContexts: {
         type: 'array',
