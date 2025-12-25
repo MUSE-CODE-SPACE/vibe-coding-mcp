@@ -52,49 +52,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
-      case 'collect_code_context': {
+      case 'muse_collect_code_context': {
         const result = collectCodeContext(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
-      case 'summarize_design_decisions': {
+      case 'muse_summarize_design_decisions': {
         const result = summarizeDesignDecisions(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
-      case 'generate_dev_document': {
+      case 'muse_generate_dev_document': {
         const result = generateDevDocument(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
-      case 'normalize_for_platform': {
+      case 'muse_normalize_for_platform': {
         const result = normalizeForPlatform(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
-      case 'publish_document': {
+      case 'muse_publish_document': {
         const result = await publishDocument(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
-      case 'create_session_log': {
+      case 'muse_create_session_log': {
         const result = await createSessionLog(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
         };
       }
 
-      case 'analyze_code': {
+      case 'muse_analyze_code': {
         const result = analyzeCodeTool(args as any);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],

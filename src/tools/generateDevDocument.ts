@@ -627,7 +627,7 @@ function generateArchitectureDoc(input: GenerateDevDocumentInput, t: typeof tran
 }
 
 export const generateDevDocumentSchema = {
-  name: 'generate_dev_document',
+  name: 'muse_generate_dev_document',
   description: 'Generates README, DESIGN, TUTORIAL, or CHANGELOG documents in Markdown format. Supports multiple languages, badges, API reference, FAQ, and more.',
   inputSchema: {
     type: 'object',
