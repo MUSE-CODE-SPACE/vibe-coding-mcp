@@ -368,7 +368,7 @@ export function summarizeDesignDecisions(input: SummarizeDesignDecisionsInput): 
 }
 
 export const summarizeDesignDecisionsSchema = {
-  name: 'summarize_design_decisions',
+  name: 'muse_summarize_design_decisions',
   description: 'Extracts and analyzes key architectural and design decisions from conversation logs. Supports both English and Korean, with importance scoring and keyword extraction.',
   inputSchema: {
     type: 'object',

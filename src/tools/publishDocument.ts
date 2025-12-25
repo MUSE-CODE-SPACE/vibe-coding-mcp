@@ -49,7 +49,7 @@ export async function publishDocument(input: PublishDocumentInput): Promise<Publ
 }
 
 export const publishDocumentSchema = {
-  name: 'publish_document',
+  name: 'muse_publish_document',
   description: 'Publishes generated documents to external platforms (Notion, GitHub Wiki, or Obsidian).',
   inputSchema: {
     type: 'object',

@@ -134,7 +134,7 @@ function generateMarkdownLog(log: SessionLog, logType: 'daily' | 'session'): str
 }
 
 export const createSessionLogSchema = {
-  name: 'create_session_log',
+  name: 'muse_create_session_log',
   description: 'Creates daily or session-based vibe coding session logs.',
   inputSchema: {
     type: 'object',

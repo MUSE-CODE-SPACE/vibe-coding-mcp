@@ -57,7 +57,7 @@ function markdownToNotionBlocks(markdown: string): any[] {
     }
     // 코드 블록
     else if (line.startsWith('```')) {
-      const language = line.slice(3).trim() || 'plain text';
+      let language = line.slice(3).trim() || 'plain text';
       const codeLines: string[] = [];
       i++;
 
@@ -66,12 +66,47 @@ function markdownToNotionBlocks(markdown: string): any[] {
         i++;
       }
 
+      // 노션 API가 지원하는 언어로 매핑
+      const languageMap: Record<string, string> = {
+        'ts': 'typescript',
+        'js': 'javascript',
+        'py': 'python',
+        'rb': 'ruby',
+        'sh': 'shell',
+        'yml': 'yaml',
+        'md': 'markdown',
+        'text': 'plain text',
+        'txt': 'plain text'
+      };
+
+      // 노션이 지원하는 언어 목록
+      const supportedLanguages = [
+        'abap', 'arduino', 'bash', 'basic', 'c', 'clojure', 'coffeescript',
+        'c++', 'c#', 'css', 'dart', 'diff', 'docker', 'elixir', 'elm',
+        'erlang', 'flow', 'fortran', 'f#', 'gherkin', 'glsl', 'go',
+        'graphql', 'groovy', 'haskell', 'html', 'java', 'javascript',
+        'json', 'julia', 'kotlin', 'latex', 'less', 'lisp', 'livescript',
+        'lua', 'makefile', 'markdown', 'markup', 'matlab', 'mermaid',
+        'nix', 'objective-c', 'ocaml', 'pascal', 'perl', 'php',
+        'plain text', 'powershell', 'prolog', 'protobuf', 'python',
+        'r', 'reason', 'ruby', 'rust', 'sass', 'scala', 'scheme',
+        'scss', 'shell', 'sql', 'swift', 'typescript', 'vb.net',
+        'verilog', 'vhdl', 'visual basic', 'webassembly', 'xml', 'yaml'
+      ];
+
+      language = languageMap[language.toLowerCase()] || language.toLowerCase();
+
+      // 지원되지 않는 언어는 plain text로 변경
+      if (!supportedLanguages.includes(language)) {
+        language = 'plain text';
+      }
+
       blocks.push({
         object: 'block',
         type: 'code',
         code: {
           rich_text: [{ type: 'text', text: { content: codeLines.join('\n') } }],
-          language: language.toLowerCase()
+          language: language
         }
       });
     }

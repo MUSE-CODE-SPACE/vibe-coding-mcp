@@ -285,7 +285,7 @@ export function collectCodeContext(input: CollectCodeContextInput): CollectCodeC
 }
 
 export const collectCodeContextSchema = {
-  name: 'collect_code_context',
+  name: 'muse_collect_code_context',
   description: 'Collects code blocks and conversation summaries into a structured context for documentation. Supports automatic language detection, duplicate removal, and statistics.',
   inputSchema: {
     type: 'object',

@@ -119,7 +119,7 @@ export function analyzeCodeTool(input: AnalyzeCodeInput): AnalyzeCodeOutput {
 }
 
 export const analyzeCodeSchema = {
-  name: 'analyze_code',
+  name: 'muse_analyze_code',
   description: 'Performs deep code analysis using AST parsing. Extracts functions, classes, imports, and generates Mermaid diagrams for visualization.',
   inputSchema: {
     type: 'object',

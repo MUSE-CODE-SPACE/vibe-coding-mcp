@@ -350,7 +350,7 @@ function finalizeForObsidian(document: string, tags?: string[]): string {
 }
 
 export const normalizeForPlatformSchema = {
-  name: 'normalize_for_platform',
+  name: 'muse_normalize_for_platform',
   description: 'Converts Markdown documents for Notion, GitHub Wiki, or Obsidian platforms. Handles links, images, code blocks, tables, frontmatter, and platform-specific syntax.',
   inputSchema: {
     type: 'object',
