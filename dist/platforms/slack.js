@@ -1,6 +1,7 @@
 /**
  * Slack 웹훅 알림
  */
+import { fetchWithRetry, validateWebhookUrl, SLACK_ALLOWED_HOSTS } from '../core/security.js';
 // 마크다운을 Slack mrkdwn으로 변환
 function markdownToSlackMrkdwn(markdown) {
     let mrkdwn = markdown;
@@ -28,6 +29,8 @@ export async function sendSlackNotification(message, options = {}) {
         if (!webhookUrl) {
             throw new Error('SLACK_WEBHOOK_URL is not set');
         }
+        // Validate webhook URL (SSRF prevention)
+        validateWebhookUrl(webhookUrl, SLACK_ALLOWED_HOSTS);
         const mrkdwn = markdownToSlackMrkdwn(message);
         const payload = {
             text: mrkdwn,
@@ -42,13 +45,14 @@ export async function sendSlackNotification(message, options = {}) {
         if (options.iconEmoji) {
             payload.icon_emoji = options.iconEmoji;
         }
-        const response = await fetch(webhookUrl, {
+        // Use fetchWithRetry for timeout and retry support
+        const response = await fetchWithRetry(webhookUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             throw new Error(`Slack webhook error: ${response.status}`);
         }
@@ -68,6 +72,8 @@ export async function sendDocumentPublishedNotification(title, url, platform, op
         if (!webhookUrl) {
             throw new Error('SLACK_WEBHOOK_URL is not set');
         }
+        // Validate webhook URL (SSRF prevention)
+        validateWebhookUrl(webhookUrl, SLACK_ALLOWED_HOSTS);
         const payload = {
             blocks: [
                 {
@@ -109,13 +115,13 @@ export async function sendDocumentPublishedNotification(title, url, platform, op
                 }
             ]
         };
-        const response = await fetch(webhookUrl, {
+        const response = await fetchWithRetry(webhookUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             throw new Error(`Slack webhook error: ${response.status}`);
         }
@@ -135,6 +141,8 @@ export async function sendSessionSummaryNotification(sessionId, summary, stats, 
         if (!webhookUrl) {
             throw new Error('SLACK_WEBHOOK_URL is not set');
         }
+        // Validate webhook URL (SSRF prevention)
+        validateWebhookUrl(webhookUrl, SLACK_ALLOWED_HOSTS);
         const payload = {
             blocks: [
                 {
@@ -187,13 +195,13 @@ export async function sendSessionSummaryNotification(sessionId, summary, stats, 
                 }
             ]
         };
-        const response = await fetch(webhookUrl, {
+        const response = await fetchWithRetry(webhookUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             throw new Error(`Slack webhook error: ${response.status}`);
         }

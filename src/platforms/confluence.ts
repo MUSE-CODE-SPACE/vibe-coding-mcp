@@ -3,6 +3,7 @@
  */
 
 import { PublishOptions, PublishResult } from '../types/index.js';
+import { fetchWithRetry } from '../core/security.js';
 
 export interface ConfluenceConfig {
   baseUrl: string;
@@ -124,7 +125,7 @@ export async function publishToConfluence(
       body.ancestors = [{ id: parentId }];
     }
 
-    const response = await fetch(`${config.baseUrl}/wiki/rest/api/content`, {
+    const response = await fetchWithRetry(`${config.baseUrl}/wiki/rest/api/content`, {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${auth}`,
@@ -132,7 +133,7 @@ export async function publishToConfluence(
         'Accept': 'application/json'
       },
       body: JSON.stringify(body)
-    });
+    }, { timeout: 30000, maxRetries: 3 });
 
     if (!response.ok) {
       const error = await response.text();
@@ -167,12 +168,12 @@ export async function updateConfluencePage(
     const auth = Buffer.from(`${config.username}:${config.apiToken}`).toString('base64');
 
     // 현재 버전 가져오기
-    const currentResponse = await fetch(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
+    const currentResponse = await fetchWithRetry(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
       headers: {
         'Authorization': `Basic ${auth}`,
         'Accept': 'application/json'
       }
-    });
+    }, { timeout: 30000, maxRetries: 3 });
 
     if (!currentResponse.ok) {
       throw new Error('Failed to get current page');
@@ -182,7 +183,7 @@ export async function updateConfluencePage(
     const newVersion = currentPage.version.number + 1;
 
     // 업데이트
-    const response = await fetch(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
+    const response = await fetchWithRetry(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Basic ${auth}`,
@@ -200,7 +201,7 @@ export async function updateConfluencePage(
         },
         version: { number: newVersion }
       })
-    });
+    }, { timeout: 30000, maxRetries: 3 });
 
     if (!response.ok) {
       const error = await response.text();

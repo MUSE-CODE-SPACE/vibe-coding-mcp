@@ -1,6 +1,7 @@
 /**
  * Confluence 발행 플랫폼
  */
+import { fetchWithRetry } from '../core/security.js';
 function getConfluenceConfig() {
     const baseUrl = process.env.CONFLUENCE_BASE_URL;
     const username = process.env.CONFLUENCE_USERNAME;
@@ -89,7 +90,7 @@ export async function publishToConfluence(document, title, options) {
         if (parentId) {
             body.ancestors = [{ id: parentId }];
         }
-        const response = await fetch(`${config.baseUrl}/wiki/rest/api/content`, {
+        const response = await fetchWithRetry(`${config.baseUrl}/wiki/rest/api/content`, {
             method: 'POST',
             headers: {
                 'Authorization': `Basic ${auth}`,
@@ -97,7 +98,7 @@ export async function publishToConfluence(document, title, options) {
                 'Accept': 'application/json'
             },
             body: JSON.stringify(body)
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             const error = await response.text();
             throw new Error(`Confluence API error: ${response.status} - ${error}`);
@@ -124,19 +125,19 @@ export async function updateConfluencePage(pageId, document, title) {
         const storage = markdownToConfluenceStorage(document);
         const auth = Buffer.from(`${config.username}:${config.apiToken}`).toString('base64');
         // 현재 버전 가져오기
-        const currentResponse = await fetch(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
+        const currentResponse = await fetchWithRetry(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
             headers: {
                 'Authorization': `Basic ${auth}`,
                 'Accept': 'application/json'
             }
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!currentResponse.ok) {
             throw new Error('Failed to get current page');
         }
         const currentPage = await currentResponse.json();
         const newVersion = currentPage.version.number + 1;
         // 업데이트
-        const response = await fetch(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
+        const response = await fetchWithRetry(`${config.baseUrl}/wiki/rest/api/content/${pageId}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Basic ${auth}`,
@@ -154,7 +155,7 @@ export async function updateConfluencePage(pageId, document, title) {
                 },
                 version: { number: newVersion }
             })
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             const error = await response.text();
             throw new Error(`Confluence API error: ${response.status} - ${error}`);
