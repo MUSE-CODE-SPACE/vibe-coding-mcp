@@ -23,6 +23,12 @@ This MCP server provides 7 tools for managing vibe coding documentation:
 - **6 Document Types**: README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
 - **6 Platforms**: Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
 
+### Code Quality (v2.1)
+- **Input Validation**: Zod schema-based type-safe validation for all tools
+- **Error Handling**: Structured error classes (ToolError, ValidationError, PlatformError)
+- **Security**: Command injection prevention (exec → spawn), path sanitization
+- **Performance**: LRU cache, regex cache, memoization utilities
+
 ## Quick Start (HTTP Server)
 
 ```bash
@@ -112,6 +118,22 @@ Claude: [Uses collect_code_context → create_session_log]
 - **GitHub Wiki**: Git-based wiki updates
 - **Obsidian**: Local vault file storage with frontmatter support
 
+## Project Structure
+
+```
+src/
+├── index.ts              # HTTP/SSE server (Railway)
+├── stdio.ts              # stdio server (Claude Desktop)
+├── core/
+│   ├── schemas.ts        # Zod validation schemas
+│   ├── errors.ts         # Structured error classes
+│   └── cache.ts          # LRU cache & memoization
+├── tools/                # 7 MCP tools
+├── platforms/            # Notion, GitHub Wiki, Obsidian
+├── types/                # TypeScript interfaces
+└── utils/                # Markdown, AST, diagram utilities
+```
+
 ## Development
 
 ```bash
@@ -124,6 +146,15 @@ npm run build
 # Start
 npm start
 ```
+
+## Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `@modelcontextprotocol/sdk` | MCP server SDK |
+| `@notionhq/client` | Notion API integration |
+| `zod` | Input validation |
+| `typescript` | TypeScript compiler |
 
 ## License
 
