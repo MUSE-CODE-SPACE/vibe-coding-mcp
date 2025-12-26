@@ -1,5 +1,6 @@
 import { SessionLog, CodeContext, DesignDecision, SessionLogOptions } from '../types/index.js';
 import { generateId, formatDate, getCurrentTimestamp } from '../utils/markdown.js';
+import { validatePathWithinDirectory, sanitizeFilename } from '../core/security.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -44,14 +45,19 @@ export async function createSessionLog(input: CreateSessionLogInput): Promise<Cr
   // 파일로 저장
   if (options.outputPath) {
     const extension = options.format === 'json' ? '.json' : '.md';
-    const filename = options.logType === 'daily'
+    const rawFilename = options.logType === 'daily'
       ? `${formatDate()}-daily-log${extension}`
       : `${sessionLog.sessionId}${extension}`;
 
-    filePath = path.join(options.outputPath, filename);
+    // Sanitize filename and validate path
+    const safeFilename = sanitizeFilename(rawFilename) + (rawFilename.endsWith(extension) ? '' : extension);
+    const targetPath = path.join(options.outputPath, safeFilename);
 
     try {
-      await fs.mkdir(options.outputPath, { recursive: true });
+      // Validate path stays within output directory (prevent path traversal)
+      filePath = validatePathWithinDirectory(targetPath, options.outputPath);
+
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
       await fs.writeFile(filePath, content, 'utf-8');
     } catch (error) {
       // 파일 저장 실패시 filePath를 undefined로

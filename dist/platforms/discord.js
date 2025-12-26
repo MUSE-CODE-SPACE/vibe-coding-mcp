@@ -1,6 +1,7 @@
 /**
  * Discord 웹훅 알림
  */
+import { fetchWithRetry, validateWebhookUrl, DISCORD_ALLOWED_HOSTS } from '../core/security.js';
 // 색상 상수
 const COLORS = {
     success: 0x00ff00, // 녹색
@@ -15,6 +16,8 @@ export async function sendDiscordNotification(message, options = {}) {
         if (!webhookUrl) {
             throw new Error('DISCORD_WEBHOOK_URL is not set');
         }
+        // Validate webhook URL (SSRF prevention)
+        validateWebhookUrl(webhookUrl, DISCORD_ALLOWED_HOSTS);
         const payload = {
             content: message
         };
@@ -24,13 +27,14 @@ export async function sendDiscordNotification(message, options = {}) {
         if (options.avatarUrl) {
             payload.avatar_url = options.avatarUrl;
         }
-        const response = await fetch(webhookUrl, {
+        // Use fetchWithRetry for timeout and retry support
+        const response = await fetchWithRetry(webhookUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             throw new Error(`Discord webhook error: ${response.status}`);
         }
@@ -50,6 +54,8 @@ export async function sendDiscordEmbed(embeds, options = {}) {
         if (!webhookUrl) {
             throw new Error('DISCORD_WEBHOOK_URL is not set');
         }
+        // Validate webhook URL (SSRF prevention)
+        validateWebhookUrl(webhookUrl, DISCORD_ALLOWED_HOSTS);
         const payload = {
             embeds
         };
@@ -59,13 +65,14 @@ export async function sendDiscordEmbed(embeds, options = {}) {
         if (options.avatarUrl) {
             payload.avatar_url = options.avatarUrl;
         }
-        const response = await fetch(webhookUrl, {
+        // Use fetchWithRetry for timeout and retry support
+        const response = await fetchWithRetry(webhookUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
-        });
+        }, { timeout: 30000, maxRetries: 3 });
         if (!response.ok) {
             throw new Error(`Discord webhook error: ${response.status}`);
         }

@@ -1,3 +1,4 @@
+import { validatePathWithinDirectory, sanitizeFilename } from '../core/security.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 export async function publishToObsidian(document, title, options) {
@@ -14,10 +15,13 @@ export async function publishToObsidian(document, title, options) {
         catch {
             throw new Error(`Obsidian vault not found at: ${vaultPath}`);
         }
-        // 파일명 생성
-        const filename = options?.filename || `${sanitizeFilename(title)}.md`;
+        // 파일명 생성 (sanitize to prevent path traversal)
+        const rawFilename = options?.filename || `${title}.md`;
+        const safeFilename = sanitizeFilename(rawFilename.replace(/\.md$/, '')) + '.md';
         // 파일 경로 설정
-        const filePath = path.join(vaultPath, filename);
+        const targetPath = path.join(vaultPath, safeFilename);
+        // Validate path stays within vault directory (prevent path traversal)
+        const filePath = validatePathWithinDirectory(targetPath, vaultPath);
         // 디렉토리 생성 (필요시)
         await fs.mkdir(path.dirname(filePath), { recursive: true });
         // 파일 쓰기
@@ -35,13 +39,5 @@ export async function publishToObsidian(document, title, options) {
             error: error instanceof Error ? error.message : 'Failed to publish to Obsidian'
         };
     }
-}
-// 파일명에서 잘못된 문자 제거
-function sanitizeFilename(filename) {
-    // Windows, macOS, Linux에서 공통으로 문제되는 문자 제거
-    return filename
-        .replace(/[<>:"/\\|?*]/g, '-')
-        .replace(/\s+/g, ' ')
-        .trim();
 }
 //# sourceMappingURL=obsidian.js.map
