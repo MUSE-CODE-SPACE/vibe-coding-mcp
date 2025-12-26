@@ -1,0 +1,1 @@
+{"version":3,"file":"obsidian.d.ts","sourceRoot":"","sources":["../../src/platforms/obsidian.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,aAAa,EAAE,MAAM,mBAAmB,CAAC;AAIlE,wBAAsB,iBAAiB,CACrC,QAAQ,EAAE,MAAM,EAChB,KAAK,EAAE,MAAM,EACb,OAAO,CAAC,EAAE,OAAO,CAAC,cAAc,CAAC,GAChC,OAAO,CAAC,aAAa,CAAC,CAwCxB"}
