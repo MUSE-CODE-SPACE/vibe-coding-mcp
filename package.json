@@ -33,15 +33,15 @@
     "ai-coding",
     "model-context-protocol"
   ],
-  "author": "yoon-k",
+  "author": "MUSE-CODE-SPACE",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yoon-k/vibe-coding-mcp.git"
+    "url": "git+https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp.git"
   },
-  "homepage": "https://github.com/yoon-k/vibe-coding-mcp#readme",
+  "homepage": "https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp#readme",
   "bugs": {
-    "url": "https://github.com/yoon-k/vibe-coding-mcp/issues"
+    "url": "https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
