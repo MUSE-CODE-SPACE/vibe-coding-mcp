@@ -230,17 +230,182 @@ export const SessionHistorySchema = z.object({
   searchIn: z.array(z.enum(['title', 'summary', 'tags'])).optional()
 });
 
+// Session Statistics Schema (v2.9)
+export const SessionStatsSchema = z.object({
+  action: z.enum(['overview', 'languages', 'timeline', 'tags', 'productivity', 'trends']),
+
+  // Time range options
+  since: z.string().optional(),
+  until: z.string().optional(),
+  period: z.enum(['day', 'week', 'month', 'year', 'all']).optional().default('all'),
+
+  // Filter options
+  tags: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
+
+  // Output options
+  format: z.enum(['summary', 'detailed', 'chart']).optional().default('summary'),
+  includeInsights: z.boolean().optional().default(true),
+
+  // Comparison
+  compareWith: z.enum(['previous', 'average']).optional()
+});
+
+// AI Auto-tagging Schema (v2.10)
+export const AutoTagSchema = z.object({
+  action: z.enum(['suggest', 'apply', 'train', 'config']),
+
+  // For suggest/apply actions
+  sessionId: z.string().optional(),
+  content: z.string().optional(),
+  codeBlocks: z.array(CodeBlockSchema).optional(),
+
+  // Tagging options
+  maxTags: z.number().min(1).max(20).optional().default(5),
+  minConfidence: z.number().min(0).max(1).optional().default(0.7),
+  includeExisting: z.boolean().optional().default(true),
+  categories: z.array(z.string()).optional(),
+
+  // For train action
+  examples: z.array(z.object({
+    content: z.string(),
+    tags: z.array(z.string())
+  })).optional(),
+
+  // For config action
+  enableAutoTag: z.boolean().optional(),
+  defaultCategories: z.array(z.string()).optional(),
+  customPatterns: z.array(z.object({
+    pattern: z.string(),
+    tags: z.array(z.string())
+  })).optional(),
+
+  // AI options
+  useAI: z.boolean().optional().default(false)
+});
+
+// Custom Templates Schema (v2.11)
+export const TemplateSchema = z.object({
+  action: z.enum(['create', 'get', 'update', 'delete', 'list', 'apply', 'preview', 'import', 'export']),
+
+  // Template identification
+  templateId: z.string().optional(),
+  name: z.string().optional(),
+
+  // Template definition
+  type: z.enum(['document', 'session-log', 'export', 'report']).optional(),
+  content: z.string().optional(),
+  description: z.string().optional(),
+
+  // Template variables
+  variables: z.array(z.object({
+    name: z.string(),
+    type: z.enum(['string', 'number', 'boolean', 'array', 'date']),
+    required: z.boolean().optional().default(false),
+    default: z.unknown().optional(),
+    description: z.string().optional()
+  })).optional(),
+
+  // For apply action
+  data: z.record(z.unknown()).optional(),
+
+  // For import/export
+  format: z.enum(['json', 'yaml']).optional().default('json'),
+  filePath: z.string().optional(),
+
+  // List options
+  filterType: z.enum(['document', 'session-log', 'export', 'report']).optional(),
+  limit: z.number().optional(),
+  offset: z.number().optional()
+});
+
+// Batch Operations Schema (v2.12)
+export const BatchSchema = z.object({
+  action: z.enum(['execute', 'preview', 'status', 'cancel', 'history']),
+
+  // Batch job definition
+  operations: z.array(z.object({
+    tool: z.string(),
+    params: z.record(z.unknown()),
+    id: z.string().optional(),
+    dependsOn: z.array(z.string()).optional()
+  })).optional(),
+
+  // Execution options
+  mode: z.enum(['sequential', 'parallel']).optional().default('sequential'),
+  stopOnError: z.boolean().optional().default(true),
+  timeout: z.number().min(1000).max(600000).optional().default(60000),
+
+  // For status/cancel actions
+  jobId: z.string().optional(),
+
+  // For history action
+  limit: z.number().optional().default(20),
+  status: z.enum(['pending', 'running', 'completed', 'failed', 'cancelled']).optional(),
+
+  // Output options
+  includeResults: z.boolean().optional().default(true),
+  includeErrors: z.boolean().optional().default(true)
+});
+
+export const GitSchema = z.object({
+  action: z.enum(['status', 'log', 'diff', 'branch', 'snapshot', 'extractDecisions', 'linkToSession']),
+  repoPath: z.string().optional(),
+
+  // Status options
+  includeUntracked: z.boolean().optional().default(true),
+
+  // Log options
+  limit: z.number().min(1).max(500).optional().default(20),
+  author: z.string().optional(),
+  since: z.string().optional(),
+  until: z.string().optional(),
+  grep: z.string().optional(),
+  oneline: z.boolean().optional().default(false),
+
+  // Diff options
+  diffType: z.enum(['staged', 'unstaged', 'all']).optional().default('all'),
+  fromRef: z.string().optional(),
+  toRef: z.string().optional(),
+  path: z.string().optional(),
+  contextLines: z.number().min(0).max(20).optional().default(3),
+  stat: z.boolean().optional().default(true),
+
+  // Branch options
+  includeRemote: z.boolean().optional().default(true),
+  verbose: z.boolean().optional().default(false),
+
+  // Snapshot options
+  includeDiff: z.boolean().optional().default(true),
+  includeLog: z.boolean().optional().default(true),
+  logLimit: z.number().min(1).max(100).optional().default(10),
+  includeStash: z.boolean().optional().default(false),
+
+  // Extract decisions options
+  patterns: z.array(z.string()).optional(),
+  language: z.enum(['en', 'ko', 'auto']).optional().default('auto'),
+
+  // Link to session options
+  sessionId: z.string().optional(),
+  snapshotType: z.enum(['minimal', 'full']).optional().default('minimal')
+});
+
 // Type exports from schemas
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;
 export type SessionHistoryInput = z.infer<typeof SessionHistorySchema>;
 export type ExportSessionInput = z.infer<typeof ExportSessionSchema>;
+export type GitInput = z.infer<typeof GitSchema>;
 export type ProjectProfileInput = z.infer<typeof ProjectProfileSchema>;
 export type GenerateDevDocumentInput = z.infer<typeof GenerateDevDocumentSchema>;
 export type NormalizeForPlatformInput = z.infer<typeof NormalizeForPlatformSchema>;
 export type PublishDocumentInput = z.infer<typeof PublishDocumentSchema>;
 export type CreateSessionLogInput = z.infer<typeof CreateSessionLogSchema>;
 export type AnalyzeCodeInput = z.infer<typeof AnalyzeCodeSchema>;
+export type SessionStatsInput = z.infer<typeof SessionStatsSchema>;
+export type AutoTagInput = z.infer<typeof AutoTagSchema>;
+export type TemplateInput = z.infer<typeof TemplateSchema>;
+export type BatchInput = z.infer<typeof BatchSchema>;
 
 /**
  * Validates input against schema and returns typed result

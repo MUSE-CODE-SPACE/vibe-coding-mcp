@@ -4,7 +4,7 @@ MCP server that automatically collects, summarizes, documents, and publishes cod
 
 ## Features
 
-This MCP server provides 10 tools for managing vibe coding documentation:
+This MCP server provides 15 tools for managing vibe coding documentation:
 
 | Tool | Description |
 |------|-------------|
@@ -18,6 +18,11 @@ This MCP server provides 10 tools for managing vibe coding documentation:
 | `muse_session_history` | Manages session history - save, retrieve, search past sessions |
 | `muse_export_session` | Exports sessions to Markdown, JSON, or HTML formats |
 | `muse_project_profile` | Manages project-specific settings and configurations |
+| `muse_git` | Git integration - status, log, diff, branch, snapshot, design decision extraction |
+| `muse_session_stats` | Session analytics dashboard with productivity insights and trends |
+| `muse_auto_tag` | AI-powered auto-tagging for sessions based on content analysis |
+| `muse_template` | Custom template management for documents and reports |
+| `muse_batch` | Batch operations to execute multiple tools in sequence or parallel |
 
 ### Additional Features (v2.0)
 - **AST Parsing**: TypeScript, Python, Go code analysis
@@ -43,7 +48,7 @@ This MCP server provides 10 tools for managing vibe coding documentation:
 - **Configuration Validation**: Startup validation for all platform configurations
 - **Platform Expansion**: Full support for 6 platforms (Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord)
 - **AST Memoization**: Cached code analysis for improved performance
-- **Test Coverage**: 81 tests with 85%+ coverage on core modules
+- **Test Coverage**: 149 tests with 85%+ coverage on core modules
 
 ### AI-Powered Analysis (v2.4)
 - **Claude AI Integration**: Use Claude AI for enhanced design decision analysis
@@ -71,6 +76,45 @@ This MCP server provides 10 tools for managing vibe coding documentation:
 - **Code Analysis Config**: Language preferences and diagram types
 - **Documentation Config**: Default document types, language, author info
 - **Team Management**: Store team member information per project
+
+### Git Integration (v2.8)
+- **Repository Status**: View staged, unstaged, and untracked files
+- **Commit History**: Browse commit log with filtering by author, date, grep
+- **Diff Analysis**: View changes with statistics (staged, unstaged, between refs)
+- **Branch Info**: List local and remote branches with tracking info
+- **Git Snapshot**: Capture complete repository state for session context
+- **Design Decision Extraction**: Auto-extract design decisions from commit messages
+- **Session Linking**: Attach Git context to coding sessions
+
+### Session Statistics Dashboard (v2.9)
+- **Overview Analytics**: Total sessions, code contexts, design decisions at a glance
+- **Language Distribution**: Breakdown of programming languages used across sessions
+- **Timeline View**: Session activity over time (daily, weekly, monthly)
+- **Tag Analytics**: Most used tags and tag co-occurrence analysis
+- **Productivity Insights**: Session duration, code output, and efficiency metrics
+- **Trend Analysis**: Compare current period with previous or average
+
+### AI Auto-tagging (v2.10)
+- **Smart Tag Suggestions**: Pattern-based and AI-powered tag recommendations
+- **Confidence Scoring**: Each tag suggestion includes confidence level
+- **Custom Tag Training**: Train the system with custom tag patterns
+- **Configurable Rules**: Define tag rules for file extensions, keywords, patterns
+- **Batch Tagging**: Apply tags to multiple sessions at once
+
+### Custom Templates (v2.11)
+- **Template Management**: Create, edit, delete custom document templates
+- **Variable Substitution**: Support for `{{variable}}`, `${variable}`, `{variable}` formats
+- **Built-in Templates**: README, Session Summary, Weekly Report templates included
+- **Template Preview**: Preview rendered output before applying
+- **Import/Export**: Share templates between projects
+
+### Batch Operations (v2.12)
+- **Sequential Execution**: Run multiple tools in order with dependency management
+- **Parallel Execution**: Execute independent operations concurrently
+- **Dependency Graph**: Topological sort for operation ordering
+- **Job Tracking**: Monitor batch job status, cancel running jobs
+- **Error Handling**: Stop on error or continue with remaining operations
+- **Result Chaining**: Pass output from one operation to next using `$ref` syntax
 
 ## Installation
 
@@ -157,6 +201,58 @@ User: Create a session log for today's work.
 Claude: [Uses collect_code_context → create_session_log]
 ```
 
+### 4. Git-Aware Session Documentation
+
+```
+User: Capture my current Git state and create a session with design decisions from commits.
+
+Claude: [Uses muse_git(action='snapshot') → muse_git(action='extractDecisions') → muse_session_history(action='save')]
+```
+
+### 5. Complete Session Export with Git Context
+
+```
+User: Export all my sessions from this week with Git information.
+
+Claude: [Uses muse_git(action='linkToSession') → muse_export_session(format='markdown')]
+```
+
+### 6. Session Analytics Dashboard
+
+```
+User: Show me my coding productivity statistics for this month.
+
+Claude: [Uses muse_session_stats(action='overview') → muse_session_stats(action='productivity') → muse_session_stats(action='trends')]
+```
+
+### 7. Auto-tag and Organize Sessions
+
+```
+User: Analyze my sessions and suggest relevant tags.
+
+Claude: [Uses muse_auto_tag(action='suggest') → muse_auto_tag(action='apply')]
+```
+
+### 8. Generate Custom Report with Template
+
+```
+User: Create a weekly report using the team report template.
+
+Claude: [Uses muse_template(action='apply', templateId='weekly-report') → muse_publish_document]
+```
+
+### 9. Batch Documentation Workflow
+
+```
+User: Analyze this code, generate docs, and publish to Notion in one go.
+
+Claude: [Uses muse_batch(action='execute', operations=[
+  {tool: 'muse_analyze_code', params: {...}},
+  {tool: 'muse_generate_dev_document', params: {...}, dependsOn: ['op_0']},
+  {tool: 'muse_publish_document', params: {...}, dependsOn: ['op_1']}
+])]
+```
+
 ## Supported Platforms
 
 - **Notion**: Full API integration with page creation
@@ -179,10 +275,15 @@ src/
 │   ├── security.ts       # Path traversal, SSRF, timeout utilities
 │   ├── logger.ts         # Structured JSON logging
 │   └── config.ts         # Platform configuration validation
-├── tools/                # 10 MCP tools
+├── tools/                # 15 MCP tools
 ├── platforms/            # Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
 ├── types/                # TypeScript interfaces
-└── utils/                # Markdown, AST, diagram utilities
+└── utils/
+    ├── markdown.ts       # Markdown processing
+    ├── astParser.ts      # AST parsing for TypeScript, Python, Go
+    ├── diagramGenerator.ts # Mermaid diagram generation
+    ├── gitExecutor.ts    # Safe Git command execution
+    └── gitParsers.ts     # Git output parsing utilities
 ```
 
 ## Development

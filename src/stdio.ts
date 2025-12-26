@@ -25,6 +25,11 @@ import {
   SessionHistorySchema,
   ExportSessionSchema,
   ProjectProfileSchema,
+  GitSchema,
+  SessionStatsSchema,
+  AutoTagSchema,
+  TemplateSchema,
+  BatchSchema,
 } from './core/schemas.js';
 
 // Tools
@@ -38,6 +43,11 @@ import { analyzeCodeTool, analyzeCodeSchema } from './tools/analyzeCode.js';
 import { sessionHistoryTool, sessionHistorySchema } from './tools/sessionHistory.js';
 import { exportSessionTool, exportSessionSchema } from './tools/exportSession.js';
 import { projectProfileTool, projectProfileSchema } from './tools/projectProfile.js';
+import { gitTool, gitSchema } from './tools/git.js';
+import { sessionStatsTool, sessionStatsSchema } from './tools/sessionStats.js';
+import { autoTagTool, autoTagSchema } from './tools/autoTag.js';
+import { templateTool, templateSchema } from './tools/template.js';
+import { batchTool, batchSchema } from './tools/batch.js';
 
 // Tool handlers with validation
 const toolHandlers = {
@@ -90,6 +100,31 @@ const toolHandlers = {
     const validated = validateInput(ProjectProfileSchema, args);
     return projectProfileTool(validated as Parameters<typeof projectProfileTool>[0]);
   },
+
+  muse_git: async (args: unknown) => {
+    const validated = validateInput(GitSchema, args);
+    return gitTool(validated as Parameters<typeof gitTool>[0]);
+  },
+
+  muse_session_stats: async (args: unknown) => {
+    const validated = validateInput(SessionStatsSchema, args);
+    return sessionStatsTool(validated as Parameters<typeof sessionStatsTool>[0]);
+  },
+
+  muse_auto_tag: async (args: unknown) => {
+    const validated = validateInput(AutoTagSchema, args);
+    return autoTagTool(validated as Parameters<typeof autoTagTool>[0]);
+  },
+
+  muse_template: async (args: unknown) => {
+    const validated = validateInput(TemplateSchema, args);
+    return templateTool(validated as Parameters<typeof templateTool>[0]);
+  },
+
+  muse_batch: async (args: unknown) => {
+    const validated = validateInput(BatchSchema, args);
+    return batchTool(validated as Parameters<typeof batchTool>[0]);
+  },
 } as const;
 
 type ToolName = keyof typeof toolHandlers;
@@ -101,7 +136,7 @@ function isValidToolName(name: string): name is ToolName {
 const server = new Server(
   {
     name: 'vibe-coding-mcp',
-    version: '2.6.0',
+    version: '2.12.0',
   },
   {
     capabilities: {
@@ -124,6 +159,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       sessionHistorySchema,
       exportSessionSchema,
       projectProfileSchema,
+      gitSchema,
+      sessionStatsSchema,
+      autoTagSchema,
+      templateSchema,
+      batchSchema,
     ],
   };
 });

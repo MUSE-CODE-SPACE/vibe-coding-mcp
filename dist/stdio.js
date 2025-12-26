@@ -8,7 +8,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextpro
 // Core
 import { createErrorResponse, ToolError } from './core/errors.js';
 import { initializeAI } from './core/ai.js';
-import { validateInput, CollectCodeContextSchema, SummarizeDesignDecisionsSchema, GenerateDevDocumentSchema, NormalizeForPlatformSchema, PublishDocumentSchema, CreateSessionLogSchema, AnalyzeCodeSchema, SessionHistorySchema, ExportSessionSchema, ProjectProfileSchema, } from './core/schemas.js';
+import { validateInput, CollectCodeContextSchema, SummarizeDesignDecisionsSchema, GenerateDevDocumentSchema, NormalizeForPlatformSchema, PublishDocumentSchema, CreateSessionLogSchema, AnalyzeCodeSchema, SessionHistorySchema, ExportSessionSchema, ProjectProfileSchema, GitSchema, SessionStatsSchema, AutoTagSchema, TemplateSchema, BatchSchema, } from './core/schemas.js';
 // Tools
 import { collectCodeContext, collectCodeContextSchema } from './tools/collectCodeContext.js';
 import { summarizeDesignDecisions, summarizeDesignDecisionsSchema } from './tools/summarizeDesignDecisions.js';
@@ -20,6 +20,11 @@ import { analyzeCodeTool, analyzeCodeSchema } from './tools/analyzeCode.js';
 import { sessionHistoryTool, sessionHistorySchema } from './tools/sessionHistory.js';
 import { exportSessionTool, exportSessionSchema } from './tools/exportSession.js';
 import { projectProfileTool, projectProfileSchema } from './tools/projectProfile.js';
+import { gitTool, gitSchema } from './tools/git.js';
+import { sessionStatsTool, sessionStatsSchema } from './tools/sessionStats.js';
+import { autoTagTool, autoTagSchema } from './tools/autoTag.js';
+import { templateTool, templateSchema } from './tools/template.js';
+import { batchTool, batchSchema } from './tools/batch.js';
 // Tool handlers with validation
 const toolHandlers = {
     muse_collect_code_context: (args) => {
@@ -62,13 +67,33 @@ const toolHandlers = {
         const validated = validateInput(ProjectProfileSchema, args);
         return projectProfileTool(validated);
     },
+    muse_git: async (args) => {
+        const validated = validateInput(GitSchema, args);
+        return gitTool(validated);
+    },
+    muse_session_stats: async (args) => {
+        const validated = validateInput(SessionStatsSchema, args);
+        return sessionStatsTool(validated);
+    },
+    muse_auto_tag: async (args) => {
+        const validated = validateInput(AutoTagSchema, args);
+        return autoTagTool(validated);
+    },
+    muse_template: async (args) => {
+        const validated = validateInput(TemplateSchema, args);
+        return templateTool(validated);
+    },
+    muse_batch: async (args) => {
+        const validated = validateInput(BatchSchema, args);
+        return batchTool(validated);
+    },
 };
 function isValidToolName(name) {
     return name in toolHandlers;
 }
 const server = new Server({
     name: 'vibe-coding-mcp',
-    version: '2.6.0',
+    version: '2.12.0',
 }, {
     capabilities: {
         tools: {},
@@ -88,6 +113,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             sessionHistorySchema,
             exportSessionSchema,
             projectProfileSchema,
+            gitSchema,
+            sessionStatsSchema,
+            autoTagSchema,
+            templateSchema,
+            batchSchema,
         ],
     };
 });
