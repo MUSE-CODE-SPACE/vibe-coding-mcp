@@ -118,14 +118,11 @@ export const CreateSessionLogSchema = z.object({
 });
 export const AnalyzeCodeSchema = z.object({
     code: z.string().min(1, 'Code is required'),
-    language: z.enum(['typescript', 'javascript', 'python', 'go']),
+    language: z.enum(['typescript', 'javascript', 'python', 'go']).optional(),
     filename: z.string().optional(),
-    options: z.object({
-        includeComplexity: z.boolean().optional().default(true),
-        includeDependencies: z.boolean().optional().default(true),
-        generateDiagram: z.boolean().optional().default(true),
-        diagramType: z.enum(['class', 'flowchart', 'dependency', 'architecture']).optional().default('class')
-    }).optional()
+    generateDiagrams: z.boolean().optional().default(true),
+    diagramTypes: z.array(z.enum(['class', 'flowchart', 'dependency', 'all'])).optional().default(['all']),
+    useAI: z.boolean().optional().default(false)
 });
 /**
  * Validates input against schema and returns typed result

@@ -2,7 +2,7 @@ import { analyzeCodeTool } from '../src/tools/analyzeCode.js';
 
 describe('analyzeCodeTool', () => {
   describe('TypeScript analysis', () => {
-    it('should analyze TypeScript code', () => {
+    it('should analyze TypeScript code', async () => {
       const code = `
         import { useState } from 'react';
 
@@ -24,7 +24,7 @@ describe('analyzeCodeTool', () => {
         }
       `;
 
-      const result = analyzeCodeTool({ code, language: 'typescript' });
+      const result = await analyzeCodeTool({ code, language: 'typescript' });
 
       expect(result.analysis.language).toBe('typescript');
       expect(result.analysis.functions.length).toBeGreaterThan(0);
@@ -32,14 +32,14 @@ describe('analyzeCodeTool', () => {
       expect(result.analysis.imports.length).toBeGreaterThan(0);
     });
 
-    it('should detect async functions', () => {
+    it('should detect async functions', async () => {
       const code = `
         async function fetchData() {
           return await fetch('/api');
         }
       `;
 
-      const result = analyzeCodeTool({ code, language: 'typescript' });
+      const result = await analyzeCodeTool({ code, language: 'typescript' });
       const asyncFuncs = result.analysis.functions.filter(f => f.async);
 
       expect(asyncFuncs.length).toBeGreaterThan(0);
@@ -47,7 +47,7 @@ describe('analyzeCodeTool', () => {
   });
 
   describe('Python analysis', () => {
-    it('should analyze Python code', () => {
+    it('should analyze Python code', async () => {
       const code = `
         from typing import List
 
@@ -62,7 +62,7 @@ describe('analyzeCodeTool', () => {
                 return self.users
       `;
 
-      const result = analyzeCodeTool({ code, language: 'python' });
+      const result = await analyzeCodeTool({ code, language: 'python' });
 
       expect(result.analysis.language).toBe('python');
       expect(result.analysis.functions.length).toBeGreaterThan(0);
@@ -70,7 +70,7 @@ describe('analyzeCodeTool', () => {
   });
 
   describe('Go analysis', () => {
-    it('should analyze Go code', () => {
+    it('should analyze Go code', async () => {
       const code = `
         package main
 
@@ -89,7 +89,7 @@ describe('analyzeCodeTool', () => {
         }
       `;
 
-      const result = analyzeCodeTool({ code, language: 'go' });
+      const result = await analyzeCodeTool({ code, language: 'go' });
 
       expect(result.analysis.language).toBe('go');
       expect(result.analysis.functions.length).toBeGreaterThan(0);
@@ -97,20 +97,20 @@ describe('analyzeCodeTool', () => {
   });
 
   describe('complexity calculation', () => {
-    it('should calculate low complexity for simple code', () => {
+    it('should calculate low complexity for simple code', async () => {
       const code = `
         function add(a, b) {
           return a + b;
         }
       `;
 
-      const result = analyzeCodeTool({ code });
+      const result = await analyzeCodeTool({ code });
 
       expect(result.analysis.complexity).toBeLessThan(10);
       expect(result.summary.complexity).toBe(result.analysis.complexity);
     });
 
-    it('should calculate higher complexity for code with many branches', () => {
+    it('should calculate higher complexity for code with many branches', async () => {
       const code = `
         function process(value) {
           if (value > 0) {
@@ -127,23 +127,23 @@ describe('analyzeCodeTool', () => {
         }
       `;
 
-      const result = analyzeCodeTool({ code });
+      const result = await analyzeCodeTool({ code });
 
       expect(result.analysis.complexity).toBeGreaterThan(1);
     });
   });
 
   describe('insights generation', () => {
-    it('should generate complexity insights', () => {
+    it('should generate complexity insights', async () => {
       const code = `function simple() { return 1; }`;
 
-      const result = analyzeCodeTool({ code });
+      const result = await analyzeCodeTool({ code });
 
       expect(result.insights.length).toBeGreaterThan(0);
       expect(result.insights.some(i => i.includes('complexity'))).toBe(true);
     });
 
-    it('should identify async functions in insights', () => {
+    it('should identify async functions in insights', async () => {
       const code = `
         async function fetchData() {
           return await fetch('/api');
@@ -153,14 +153,14 @@ describe('analyzeCodeTool', () => {
         }
       `;
 
-      const result = analyzeCodeTool({ code, language: 'javascript' });
+      const result = await analyzeCodeTool({ code, language: 'javascript' });
 
       expect(result.insights.some(i => i.includes('async'))).toBe(true);
     });
   });
 
   describe('diagram generation', () => {
-    it('should generate diagrams when enabled', () => {
+    it('should generate diagrams when enabled', async () => {
       const code = `
         class User {
           name: string;
@@ -168,7 +168,7 @@ describe('analyzeCodeTool', () => {
         }
       `;
 
-      const result = analyzeCodeTool({
+      const result = await analyzeCodeTool({
         code,
         generateDiagrams: true,
         diagramTypes: ['class']
@@ -178,14 +178,14 @@ describe('analyzeCodeTool', () => {
       expect(result.diagrams!.length).toBeGreaterThan(0);
     });
 
-    it('should not generate diagrams when disabled', () => {
+    it('should not generate diagrams when disabled', async () => {
       const code = `
         class User {
           name: string;
         }
       `;
 
-      const result = analyzeCodeTool({
+      const result = await analyzeCodeTool({
         code,
         generateDiagrams: false
       });
@@ -195,14 +195,14 @@ describe('analyzeCodeTool', () => {
   });
 
   describe('summary generation', () => {
-    it('should include all summary fields', () => {
+    it('should include all summary fields', async () => {
       const code = `
         import { x } from 'y';
         export function test() {}
         export class TestClass {}
       `;
 
-      const result = analyzeCodeTool({ code });
+      const result = await analyzeCodeTool({ code });
 
       expect(result.summary).toHaveProperty('totalFunctions');
       expect(result.summary).toHaveProperty('totalClasses');
@@ -214,18 +214,18 @@ describe('analyzeCodeTool', () => {
   });
 
   describe('auto language detection', () => {
-    it('should auto-detect TypeScript', () => {
+    it('should auto-detect TypeScript', async () => {
       const code = `
         const x: string = 'hello';
         function greet(name: string): void {}
       `;
 
-      const result = analyzeCodeTool({ code });
+      const result = await analyzeCodeTool({ code });
 
       expect(result.analysis.language).toBe('typescript');
     });
 
-    it('should auto-detect Python', () => {
+    it('should auto-detect Python', async () => {
       const code = `
 def hello():
     print("Hello")
@@ -234,10 +234,20 @@ class MyClass:
     pass
       `;
 
-      const result = analyzeCodeTool({ code });
+      const result = await analyzeCodeTool({ code });
 
       // Python detection requires specific patterns at line start
       expect(['python', 'unknown']).toContain(result.analysis.language);
+    });
+  });
+
+  describe('usedAI flag', () => {
+    it('should have usedAI flag set to false when AI not used', async () => {
+      const code = `function test() { return 1; }`;
+
+      const result = await analyzeCodeTool({ code, useAI: false });
+
+      expect(result.usedAI).toBe(false);
     });
   });
 });

@@ -1,6 +1,7 @@
 /**
  * 코드 분석 도구
  * AST 파싱을 통한 고급 코드 분석 및 다이어그램 생성
+ * v2.5: AI 기반 심층 분석 추가
  */
 import { CodeAnalysis } from '../utils/astParser.js';
 export interface AnalyzeCodeInput {
@@ -9,6 +10,7 @@ export interface AnalyzeCodeInput {
     filename?: string;
     generateDiagrams?: boolean;
     diagramTypes?: ('class' | 'flowchart' | 'dependency' | 'all')[];
+    useAI?: boolean;
 }
 export interface AnalyzeCodeOutput {
     analysis: CodeAnalysis;
@@ -25,8 +27,20 @@ export interface AnalyzeCodeOutput {
         dependencies: string[];
     };
     insights: string[];
+    usedAI: boolean;
+    aiAnalysis?: {
+        summary: string;
+        issues: Array<{
+            type: string;
+            severity: string;
+            description: string;
+            line?: number;
+        }>;
+        suggestions: string[];
+        metrics: Record<string, number | string>;
+    };
 }
-export declare function analyzeCodeTool(input: AnalyzeCodeInput): AnalyzeCodeOutput;
+export declare function analyzeCodeTool(input: AnalyzeCodeInput): Promise<AnalyzeCodeOutput>;
 export declare const analyzeCodeSchema: {
     name: string;
     description: string;
@@ -56,6 +70,10 @@ export declare const analyzeCodeSchema: {
                     type: string;
                     enum: string[];
                 };
+                description: string;
+            };
+            useAI: {
+                type: string;
                 description: string;
             };
         };

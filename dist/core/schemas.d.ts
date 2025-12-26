@@ -652,44 +652,25 @@ export declare const CreateSessionLogSchema: z.ZodObject<{
 }>;
 export declare const AnalyzeCodeSchema: z.ZodObject<{
     code: z.ZodString;
-    language: z.ZodEnum<["typescript", "javascript", "python", "go"]>;
+    language: z.ZodOptional<z.ZodEnum<["typescript", "javascript", "python", "go"]>>;
     filename: z.ZodOptional<z.ZodString>;
-    options: z.ZodOptional<z.ZodObject<{
-        includeComplexity: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-        includeDependencies: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-        generateDiagram: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-        diagramType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["class", "flowchart", "dependency", "architecture"]>>>;
-    }, "strip", z.ZodTypeAny, {
-        includeComplexity: boolean;
-        includeDependencies: boolean;
-        generateDiagram: boolean;
-        diagramType: "architecture" | "class" | "flowchart" | "dependency";
-    }, {
-        includeComplexity?: boolean | undefined;
-        includeDependencies?: boolean | undefined;
-        generateDiagram?: boolean | undefined;
-        diagramType?: "architecture" | "class" | "flowchart" | "dependency" | undefined;
-    }>>;
+    generateDiagrams: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+    diagramTypes: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodEnum<["class", "flowchart", "dependency", "all"]>, "many">>>;
+    useAI: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
     code: string;
-    language: "typescript" | "javascript" | "python" | "go";
+    useAI: boolean;
+    generateDiagrams: boolean;
+    diagramTypes: ("class" | "flowchart" | "dependency" | "all")[];
+    language?: "typescript" | "javascript" | "python" | "go" | undefined;
     filename?: string | undefined;
-    options?: {
-        includeComplexity: boolean;
-        includeDependencies: boolean;
-        generateDiagram: boolean;
-        diagramType: "architecture" | "class" | "flowchart" | "dependency";
-    } | undefined;
 }, {
     code: string;
-    language: "typescript" | "javascript" | "python" | "go";
+    language?: "typescript" | "javascript" | "python" | "go" | undefined;
     filename?: string | undefined;
-    options?: {
-        includeComplexity?: boolean | undefined;
-        includeDependencies?: boolean | undefined;
-        generateDiagram?: boolean | undefined;
-        diagramType?: "architecture" | "class" | "flowchart" | "dependency" | undefined;
-    } | undefined;
+    useAI?: boolean | undefined;
+    generateDiagrams?: boolean | undefined;
+    diagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
 }>;
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;

@@ -65,7 +65,7 @@ const toolHandlers = {
     return createSessionLog(validated as Parameters<typeof createSessionLog>[0]);
   },
 
-  muse_analyze_code: (args: unknown) => {
+  muse_analyze_code: async (args: unknown) => {
     const validated = validateInput(AnalyzeCodeSchema, args);
     return analyzeCodeTool(validated as Parameters<typeof analyzeCodeTool>[0]);
   },
@@ -80,7 +80,7 @@ function isValidToolName(name: string): name is ToolName {
 const server = new Server(
   {
     name: 'vibe-coding-mcp',
-    version: '2.4.0',
+    version: '2.5.0',
   },
   {
     capabilities: {

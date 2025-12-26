@@ -1,11 +1,13 @@
 /**
  * 코드 분석 도구
  * AST 파싱을 통한 고급 코드 분석 및 다이어그램 생성
+ * v2.5: AI 기반 심층 분석 추가
  */
 import { analyzeCode } from '../utils/astParser.js';
 import { generateClassDiagram, generateFlowchart, generateDependencyGraph } from '../utils/mermaidGenerator.js';
-export function analyzeCodeTool(input) {
-    const { code, language, filename = 'unknown', generateDiagrams = true, diagramTypes = ['all'] } = input;
+import { isAIAvailable, analyzeCodeWithAI } from '../core/ai.js';
+export async function analyzeCodeTool(input) {
+    const { code, language, filename = 'unknown', generateDiagrams = true, diagramTypes = ['all'], useAI = false } = input;
     // AST 분석 수행
     const analysis = analyzeCode(code, language);
     // 요약 생성
@@ -68,16 +70,38 @@ export function analyzeCodeTool(input) {
             });
         }
     }
+    // AI 분석 (선택적)
+    let aiAnalysis;
+    let usedAI = false;
+    if (useAI && isAIAvailable()) {
+        try {
+            aiAnalysis = await analyzeCodeWithAI(code, {
+                language: language || analysis.language,
+                analysisType: 'all',
+                outputLanguage: 'en'
+            });
+            usedAI = true;
+            // AI 인사이트를 기존 인사이트에 추가
+            if (aiAnalysis.suggestions) {
+                insights.push(...aiAnalysis.suggestions.map(s => `[AI] ${s}`));
+            }
+        }
+        catch {
+            // AI 분석 실패 시 무시하고 계속 진행
+        }
+    }
     return {
         analysis,
         diagrams,
         summary,
-        insights
+        insights,
+        usedAI,
+        aiAnalysis
     };
 }
 export const analyzeCodeSchema = {
     name: 'muse_analyze_code',
-    description: 'Performs deep code analysis using AST parsing. Extracts functions, classes, imports, and generates Mermaid diagrams for visualization.',
+    description: 'Performs deep code analysis using AST parsing. Extracts functions, classes, imports, and generates Mermaid diagrams. Supports AI-powered analysis for quality insights, security issues, and improvement suggestions.',
     inputSchema: {
         type: 'object',
         properties: {
@@ -105,6 +129,10 @@ export const analyzeCodeSchema = {
                     enum: ['class', 'flowchart', 'dependency', 'all']
                 },
                 description: 'Types of diagrams to generate (default: all)'
+            },
+            useAI: {
+                type: 'boolean',
+                description: 'Enable AI-powered analysis for quality, security, and suggestions (default: false, requires ANTHROPIC_API_KEY)'
             }
         },
         required: ['code']

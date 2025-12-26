@@ -48,6 +48,12 @@ This MCP server provides 7 tools for managing vibe coding documentation:
 - **Fallback Support**: Automatic fallback to pattern-based analysis when AI unavailable
 - **Optional Feature**: Enable with `useAI: true` parameter
 
+### AI Code Analysis (v2.5)
+- **AI-Powered Code Review**: Deep code analysis with quality, security, and performance insights
+- **Issue Detection**: Identify potential bugs, security vulnerabilities, and code smells
+- **Improvement Suggestions**: AI-generated recommendations for better code
+- **Works with AST**: Combines AI insights with AST-based analysis for comprehensive results
+
 ## Installation
 
 ### Claude Code (Recommended)
