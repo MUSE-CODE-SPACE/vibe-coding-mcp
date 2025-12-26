@@ -124,6 +124,39 @@ export const AnalyzeCodeSchema = z.object({
     diagramTypes: z.array(z.enum(['class', 'flowchart', 'dependency', 'all'])).optional().default(['all']),
     useAI: z.boolean().optional().default(false)
 });
+export const SessionHistorySchema = z.object({
+    action: z.enum(['save', 'get', 'update', 'delete', 'list', 'search', 'stats']),
+    sessionId: z.string().optional(),
+    title: z.string().optional(),
+    summary: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    codeContexts: z.array(z.object({
+        sessionId: z.string(),
+        timestamp: z.string(),
+        codeBlocks: z.array(z.object({
+            language: z.string(),
+            code: z.string(),
+            filename: z.string().optional()
+        })),
+        conversationSummary: z.string()
+    })).optional(),
+    designDecisions: z.array(z.object({
+        id: z.string(),
+        title: z.string(),
+        description: z.string(),
+        rationale: z.string(),
+        category: z.string(),
+        timestamp: z.string()
+    })).optional(),
+    metadata: z.record(z.unknown()).optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+    filterTags: z.array(z.string()).optional(),
+    sortBy: z.enum(['createdAt', 'updatedAt', 'title']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+    keyword: z.string().optional(),
+    searchIn: z.array(z.enum(['title', 'summary', 'tags'])).optional()
+});
 /**
  * Validates input against schema and returns typed result
  */

@@ -672,8 +672,146 @@ export declare const AnalyzeCodeSchema: z.ZodObject<{
     generateDiagrams?: boolean | undefined;
     diagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
 }>;
+export declare const SessionHistorySchema: z.ZodObject<{
+    action: z.ZodEnum<["save", "get", "update", "delete", "list", "search", "stats"]>;
+    sessionId: z.ZodOptional<z.ZodString>;
+    title: z.ZodOptional<z.ZodString>;
+    summary: z.ZodOptional<z.ZodString>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    codeContexts: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        sessionId: z.ZodString;
+        timestamp: z.ZodString;
+        codeBlocks: z.ZodArray<z.ZodObject<{
+            language: z.ZodString;
+            code: z.ZodString;
+            filename: z.ZodOptional<z.ZodString>;
+        }, "strip", z.ZodTypeAny, {
+            code: string;
+            language: string;
+            filename?: string | undefined;
+        }, {
+            code: string;
+            language: string;
+            filename?: string | undefined;
+        }>, "many">;
+        conversationSummary: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        timestamp: string;
+        sessionId: string;
+        codeBlocks: {
+            code: string;
+            language: string;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+    }, {
+        timestamp: string;
+        sessionId: string;
+        codeBlocks: {
+            code: string;
+            language: string;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+    }>, "many">>;
+    designDecisions: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        title: z.ZodString;
+        description: z.ZodString;
+        rationale: z.ZodString;
+        category: z.ZodString;
+        timestamp: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        timestamp: string;
+        description: string;
+        id: string;
+        title: string;
+        rationale: string;
+        category: string;
+    }, {
+        timestamp: string;
+        description: string;
+        id: string;
+        title: string;
+        rationale: string;
+        category: string;
+    }>, "many">>;
+    metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+    limit: z.ZodOptional<z.ZodNumber>;
+    offset: z.ZodOptional<z.ZodNumber>;
+    filterTags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    sortBy: z.ZodOptional<z.ZodEnum<["createdAt", "updatedAt", "title"]>>;
+    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
+    keyword: z.ZodOptional<z.ZodString>;
+    searchIn: z.ZodOptional<z.ZodArray<z.ZodEnum<["title", "summary", "tags"]>, "many">>;
+}, "strip", z.ZodTypeAny, {
+    action: "save" | "get" | "update" | "delete" | "list" | "search" | "stats";
+    title?: string | undefined;
+    sessionId?: string | undefined;
+    tags?: string[] | undefined;
+    designDecisions?: {
+        timestamp: string;
+        description: string;
+        id: string;
+        title: string;
+        rationale: string;
+        category: string;
+    }[] | undefined;
+    codeContexts?: {
+        timestamp: string;
+        sessionId: string;
+        codeBlocks: {
+            code: string;
+            language: string;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+    }[] | undefined;
+    summary?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    filterTags?: string[] | undefined;
+    sortBy?: "title" | "createdAt" | "updatedAt" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    keyword?: string | undefined;
+    searchIn?: ("title" | "tags" | "summary")[] | undefined;
+}, {
+    action: "save" | "get" | "update" | "delete" | "list" | "search" | "stats";
+    title?: string | undefined;
+    sessionId?: string | undefined;
+    tags?: string[] | undefined;
+    designDecisions?: {
+        timestamp: string;
+        description: string;
+        id: string;
+        title: string;
+        rationale: string;
+        category: string;
+    }[] | undefined;
+    codeContexts?: {
+        timestamp: string;
+        sessionId: string;
+        codeBlocks: {
+            code: string;
+            language: string;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+    }[] | undefined;
+    summary?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    filterTags?: string[] | undefined;
+    sortBy?: "title" | "createdAt" | "updatedAt" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    keyword?: string | undefined;
+    searchIn?: ("title" | "tags" | "summary")[] | undefined;
+}>;
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;
+export type SessionHistoryInput = z.infer<typeof SessionHistorySchema>;
 export type GenerateDevDocumentInput = z.infer<typeof GenerateDevDocumentSchema>;
 export type NormalizeForPlatformInput = z.infer<typeof NormalizeForPlatformSchema>;
 export type PublishDocumentInput = z.infer<typeof PublishDocumentSchema>;

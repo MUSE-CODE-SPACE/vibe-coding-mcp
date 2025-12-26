@@ -22,6 +22,7 @@ import {
   PublishDocumentSchema,
   CreateSessionLogSchema,
   AnalyzeCodeSchema,
+  SessionHistorySchema,
 } from './core/schemas.js';
 
 // Tools
@@ -32,6 +33,7 @@ import { normalizeForPlatform, normalizeForPlatformSchema } from './tools/normal
 import { publishDocument, publishDocumentSchema } from './tools/publishDocument.js';
 import { createSessionLog, createSessionLogSchema } from './tools/createSessionLog.js';
 import { analyzeCodeTool, analyzeCodeSchema } from './tools/analyzeCode.js';
+import { sessionHistoryTool, sessionHistorySchema } from './tools/sessionHistory.js';
 
 // Tool handlers with validation
 const toolHandlers = {
@@ -69,6 +71,11 @@ const toolHandlers = {
     const validated = validateInput(AnalyzeCodeSchema, args);
     return analyzeCodeTool(validated as Parameters<typeof analyzeCodeTool>[0]);
   },
+
+  muse_session_history: async (args: unknown) => {
+    const validated = validateInput(SessionHistorySchema, args);
+    return sessionHistoryTool(validated as Parameters<typeof sessionHistoryTool>[0]);
+  },
 } as const;
 
 type ToolName = keyof typeof toolHandlers;
@@ -80,7 +87,7 @@ function isValidToolName(name: string): name is ToolName {
 const server = new Server(
   {
     name: 'vibe-coding-mcp',
-    version: '2.5.0',
+    version: '2.6.0',
   },
   {
     capabilities: {
@@ -100,6 +107,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       publishDocumentSchema,
       createSessionLogSchema,
       analyzeCodeSchema,
+      sessionHistorySchema,
     ],
   };
 });

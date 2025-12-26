@@ -15,6 +15,7 @@ This MCP server provides 7 tools for managing vibe coding documentation:
 | `muse_publish_document` | Publishes generated documents to external platforms |
 | `muse_create_session_log` | Creates daily or session-based vibe coding session logs |
 | `muse_analyze_code` | AST-based code analysis with Mermaid diagram generation |
+| `muse_session_history` | Manages session history - save, retrieve, search past sessions |
 
 ### Additional Features (v2.0)
 - **AST Parsing**: TypeScript, Python, Go code analysis
