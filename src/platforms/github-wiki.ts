@@ -1,17 +1,62 @@
 import { PublishOptions, PublishResult } from '../types/index.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
-const execAsync = promisify(exec);
+/**
+ * Executes a git command safely using spawn (no shell injection risk)
+ */
+function execGit(args: string[], cwd?: string): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('git', args, {
+      cwd,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(new Error(`Git command failed (code ${code}): ${stderr || stdout}`));
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(new Error(`Failed to spawn git: ${err.message}`));
+    });
+  });
+}
+
+/**
+ * Sanitizes filename to prevent path traversal
+ */
+function sanitizeFilename(filename: string): string {
+  return filename
+    .replace(/\.\./g, '')
+    .replace(/[<>:"/\\|?*]/g, '-')
+    .replace(/\s+/g, '-')
+    .slice(0, 200);
+}
 
 export async function publishToGitHubWiki(
   document: string,
   title: string,
   options?: Partial<PublishOptions>
 ): Promise<PublishResult> {
+  const tempDir = path.join(os.tmpdir(), `wiki-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
   try {
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPO;
@@ -24,66 +69,74 @@ export async function publishToGitHubWiki(
       throw new Error('GITHUB_REPO environment variable is not set (format: owner/repo)');
     }
 
-    const [owner, repo] = githubRepo.split('/');
-    if (!owner || !repo) {
+    // Validate repo format
+    const repoMatch = githubRepo.match(/^([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_.-]+)$/);
+    if (!repoMatch) {
       throw new Error('Invalid GITHUB_REPO format. Expected: owner/repo');
     }
 
-    // 파일명 생성 (공백을 하이픈으로)
-    const filename = options?.filename || `${title.replace(/\s+/g, '-')}.md`;
-    const wikiPath = options?.wikiPath || '';
+    const [, owner, repo] = repoMatch;
 
-    // 임시 디렉토리에서 작업
-    const tempDir = path.join(os.tmpdir(), `wiki-${Date.now()}`);
+    // Sanitize filename
+    const safeTitle = sanitizeFilename(title);
+    const filename = options?.filename || `${safeTitle}.md`;
+    const wikiPath = options?.wikiPath ? sanitizeFilename(options.wikiPath) : '';
 
-    try {
-      // Wiki 레포 클론
-      const wikiUrl = `https://${githubToken}@github.com/${owner}/${repo}.wiki.git`;
-      await execAsync(`git clone --depth 1 ${wikiUrl} ${tempDir}`);
+    // Clone wiki repo
+    const wikiUrl = `https://${githubToken}@github.com/${owner}/${repo}.wiki.git`;
+    await execGit(['clone', '--depth', '1', wikiUrl, tempDir]);
 
-      // 파일 경로 설정
-      const filePath = wikiPath
-        ? path.join(tempDir, wikiPath, filename)
-        : path.join(tempDir, filename);
+    // Set file path
+    const filePath = wikiPath
+      ? path.join(tempDir, wikiPath, filename)
+      : path.join(tempDir, filename);
 
-      // 디렉토리 생성 (필요시)
-      await fs.mkdir(path.dirname(filePath), { recursive: true });
-
-      // 파일 쓰기
-      await fs.writeFile(filePath, document, 'utf-8');
-
-      // Git 커밋 및 푸시
-      await execAsync(`cd ${tempDir} && git add -A`);
-      await execAsync(`cd ${tempDir} && git config user.email "mcp@vibe-coding.local"`);
-      await execAsync(`cd ${tempDir} && git config user.name "Vibe Coding MCP"`);
-      await execAsync(`cd ${tempDir} && git commit -m "Update: ${title}" --allow-empty`);
-      await execAsync(`cd ${tempDir} && git push origin master || git push origin main`);
-
-      // 임시 디렉토리 정리
-      await fs.rm(tempDir, { recursive: true, force: true });
-
-      // Wiki URL 생성
-      const wikiPageName = filename.replace('.md', '');
-      const wikiUrl2 = `https://github.com/${owner}/${repo}/wiki/${wikiPageName}`;
-
-      return {
-        success: true,
-        platform: 'github-wiki',
-        url: wikiUrl2
-      };
-    } catch (gitError) {
-      // 정리 시도
-      try {
-        await fs.rm(tempDir, { recursive: true, force: true });
-      } catch { }
-
-      throw gitError;
+    // Ensure path is within tempDir (prevent path traversal)
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(path.resolve(tempDir))) {
+      throw new Error('Invalid file path: path traversal detected');
     }
+
+    // Create directory if needed
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+
+    // Write file
+    await fs.writeFile(filePath, document, 'utf-8');
+
+    // Git operations
+    await execGit(['add', '-A'], tempDir);
+    await execGit(['config', 'user.email', 'mcp@vibe-coding.local'], tempDir);
+    await execGit(['config', 'user.name', 'Vibe Coding MCP'], tempDir);
+    await execGit(['commit', '-m', `Update: ${safeTitle}`, '--allow-empty'], tempDir);
+
+    // Try pushing to master, then main
+    try {
+      await execGit(['push', 'origin', 'master'], tempDir);
+    } catch {
+      await execGit(['push', 'origin', 'main'], tempDir);
+    }
+
+    // Generate wiki URL
+    const wikiPageName = filename.replace('.md', '');
+    const wikiViewUrl = `https://github.com/${owner}/${repo}/wiki/${encodeURIComponent(wikiPageName)}`;
+
+    return {
+      success: true,
+      platform: 'github-wiki',
+      url: wikiViewUrl
+    };
   } catch (error) {
     return {
       success: false,
       platform: 'github-wiki',
       error: error instanceof Error ? error.message : 'Failed to publish to GitHub Wiki'
     };
+  } finally {
+    // Always cleanup temp directory
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }

@@ -10,6 +10,19 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
+// Core
+import { createErrorResponse, ToolError } from './core/errors.js';
+import {
+  validateInput,
+  CollectCodeContextSchema,
+  SummarizeDesignDecisionsSchema,
+  GenerateDevDocumentSchema,
+  NormalizeForPlatformSchema,
+  PublishDocumentSchema,
+  CreateSessionLogSchema,
+  AnalyzeCodeSchema,
+} from './core/schemas.js';
+
 // Tools
 import { collectCodeContext, collectCodeContextSchema } from './tools/collectCodeContext.js';
 import { summarizeDesignDecisions, summarizeDesignDecisionsSchema } from './tools/summarizeDesignDecisions.js';
@@ -19,10 +32,54 @@ import { publishDocument, publishDocumentSchema } from './tools/publishDocument.
 import { createSessionLog, createSessionLogSchema } from './tools/createSessionLog.js';
 import { analyzeCodeTool, analyzeCodeSchema } from './tools/analyzeCode.js';
 
+// Tool handlers with validation
+const toolHandlers = {
+  muse_collect_code_context: (args: unknown) => {
+    const validated = validateInput(CollectCodeContextSchema, args);
+    return collectCodeContext(validated as Parameters<typeof collectCodeContext>[0]);
+  },
+
+  muse_summarize_design_decisions: (args: unknown) => {
+    const validated = validateInput(SummarizeDesignDecisionsSchema, args);
+    return summarizeDesignDecisions(validated as Parameters<typeof summarizeDesignDecisions>[0]);
+  },
+
+  muse_generate_dev_document: (args: unknown) => {
+    const validated = validateInput(GenerateDevDocumentSchema, args);
+    return generateDevDocument(validated as Parameters<typeof generateDevDocument>[0]);
+  },
+
+  muse_normalize_for_platform: (args: unknown) => {
+    const validated = validateInput(NormalizeForPlatformSchema, args);
+    return normalizeForPlatform(validated as Parameters<typeof normalizeForPlatform>[0]);
+  },
+
+  muse_publish_document: async (args: unknown) => {
+    const validated = validateInput(PublishDocumentSchema, args);
+    return publishDocument(validated as Parameters<typeof publishDocument>[0]);
+  },
+
+  muse_create_session_log: async (args: unknown) => {
+    const validated = validateInput(CreateSessionLogSchema, args);
+    return createSessionLog(validated as Parameters<typeof createSessionLog>[0]);
+  },
+
+  muse_analyze_code: (args: unknown) => {
+    const validated = validateInput(AnalyzeCodeSchema, args);
+    return analyzeCodeTool(validated as Parameters<typeof analyzeCodeTool>[0]);
+  },
+} as const;
+
+type ToolName = keyof typeof toolHandlers;
+
+function isValidToolName(name: string): name is ToolName {
+  return name in toolHandlers;
+}
+
 const server = new Server(
   {
     name: 'vibe-coding-mcp',
-    version: '1.0.0',
+    version: '2.0.0',
   },
   {
     capabilities: {
@@ -51,65 +108,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
-    switch (name) {
-      case 'muse_collect_code_context': {
-        const result = collectCodeContext(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      case 'muse_summarize_design_decisions': {
-        const result = summarizeDesignDecisions(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      case 'muse_generate_dev_document': {
-        const result = generateDevDocument(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      case 'muse_normalize_for_platform': {
-        const result = normalizeForPlatform(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      case 'muse_publish_document': {
-        const result = await publishDocument(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      case 'muse_create_session_log': {
-        const result = await createSessionLog(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      case 'muse_analyze_code': {
-        const result = analyzeCodeTool(args as any);
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-        };
-      }
-
-      default:
-        throw new Error(`Unknown tool: ${name}`);
+    if (!isValidToolName(name)) {
+      throw new ToolError(`Unknown tool: ${name}`, 'NOT_FOUND', { tool: name });
     }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    const handler = toolHandlers[name];
+    const result = await handler(args);
+
     return {
-      content: [{ type: 'text', text: `Error: ${errorMessage}` }],
-      isError: true,
+      content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
     };
+  } catch (error) {
+    return createErrorResponse(error);
   }
 });
 
