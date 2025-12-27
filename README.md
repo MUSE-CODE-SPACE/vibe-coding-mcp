@@ -1,141 +1,72 @@
-# Vibe Coding Documentation MCP (MUSE)
+# Vibe Coding MCP
 
-MCP server that automatically collects, summarizes, documents, and publishes code and design decisions created during vibe coding sessions.
+**Vibe Coding Session Documentation MCP Server**
 
-## Features
+> Automatically collect, summarize, document, and publish your vibe coding sessions
 
-This MCP server provides 15 tools for managing vibe coding documentation:
+[![npm version](https://badge.fury.io/js/vibe-coding-mcp.svg)](https://www.npmjs.com/package/vibe-coding-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[English](#english) | [한국어](#korean)
+
+---
+
+<a name="english"></a>
+## English
+
+### Overview
+
+Vibe Coding MCP is an MCP server that automatically collects, summarizes, documents, and publishes code and design decisions created during vibe coding sessions. It provides **15 powerful tools** for managing your coding documentation workflow.
+
+### Features
+
+- **15 MCP Tools** - Complete documentation workflow
+- **AST Parsing** - TypeScript, Python, Go code analysis
+- **Mermaid Diagrams** - Class, Flowchart, Sequence, ER, Architecture diagrams
+- **Multi-language** - Korean/English support
+- **6 Document Types** - README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
+- **6 Platforms** - Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
+- **Git Integration** - Status, log, diff, branch, snapshot, design decision extraction
+- **Session Analytics** - Productivity insights and trend analysis
+- **AI-Powered** - Claude AI integration for enhanced analysis
+
+### 15 MCP Tools
 
 | Tool | Description |
 |------|-------------|
-| `muse_collect_code_context` | Collects code blocks and conversation summaries into structured context |
-| `muse_summarize_design_decisions` | Extracts key architectural and design decisions from conversation logs |
-| `muse_generate_dev_document` | Generates README, DESIGN, TUTORIAL, CHANGELOG, API, or ARCHITECTURE documents |
-| `muse_normalize_for_platform` | Converts Markdown documents for Notion, GitHub Wiki, or Obsidian |
-| `muse_publish_document` | Publishes generated documents to external platforms |
-| `muse_create_session_log` | Creates daily or session-based vibe coding session logs |
-| `muse_analyze_code` | AST-based code analysis with Mermaid diagram generation |
-| `muse_session_history` | Manages session history - save, retrieve, search past sessions |
-| `muse_export_session` | Exports sessions to Markdown, JSON, or HTML formats |
-| `muse_project_profile` | Manages project-specific settings and configurations |
-| `muse_git` | Git integration - status, log, diff, branch, snapshot, design decision extraction |
-| `muse_session_stats` | Session analytics dashboard with productivity insights and trends |
-| `muse_auto_tag` | AI-powered auto-tagging for sessions based on content analysis |
-| `muse_template` | Custom template management for documents and reports |
-| `muse_batch` | Batch operations to execute multiple tools in sequence or parallel |
+| `muse_collect_code_context` | Collect code blocks and conversation summaries |
+| `muse_summarize_design_decisions` | Extract architectural and design decisions |
+| `muse_generate_dev_document` | Generate README, DESIGN, API, ARCHITECTURE docs |
+| `muse_normalize_for_platform` | Convert Markdown for Notion, GitHub Wiki, Obsidian |
+| `muse_publish_document` | Publish to external platforms |
+| `muse_create_session_log` | Create daily/session-based logs |
+| `muse_analyze_code` | AST-based code analysis with Mermaid diagrams |
+| `muse_session_history` | Manage session history (save, retrieve, search) |
+| `muse_export_session` | Export sessions to Markdown, JSON, HTML |
+| `muse_project_profile` | Manage project-specific settings |
+| `muse_git` | Git integration (status, log, diff, branch, snapshot) |
+| `muse_session_stats` | Session analytics dashboard |
+| `muse_auto_tag` | AI-powered auto-tagging |
+| `muse_template` | Custom template management |
+| `muse_batch` | Batch operations (sequential/parallel) |
 
-### Additional Features (v2.0)
-- **AST Parsing**: TypeScript, Python, Go code analysis
-- **Mermaid Diagrams**: Class, Flowchart, Sequence, ER, Architecture diagrams
-- **Multi-language**: Korean/English support
-- **6 Document Types**: README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
-- **6 Platforms**: Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
+### Installation
 
-### Code Quality (v2.1)
-- **Input Validation**: Zod schema-based type-safe validation for all tools
-- **Error Handling**: Structured error classes (ToolError, ValidationError, PlatformError)
-- **Security**: Command injection prevention (exec → spawn), path sanitization
-- **Performance**: LRU cache, regex cache, memoization utilities
-
-### Security (v2.2)
-- **Path Traversal Prevention**: Validates file paths stay within allowed directories
-- **SSRF Protection**: Webhook URL validation for Slack/Discord
-- **Network Timeout**: AbortController-based request timeout (30s default)
-- **Retry Logic**: Exponential backoff with configurable retry attempts
-
-### Enhanced Quality (v2.3)
-- **Structured Logging**: JSON-based logging with child loggers per tool
-- **Configuration Validation**: Startup validation for all platform configurations
-- **Platform Expansion**: Full support for 6 platforms (Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord)
-- **AST Memoization**: Cached code analysis for improved performance
-- **Test Coverage**: 149 tests with 85%+ coverage on core modules
-
-### AI-Powered Analysis (v2.4)
-- **Claude AI Integration**: Use Claude AI for enhanced design decision analysis
-- **Smart Summarization**: AI-generated insights and recommendations
-- **Fallback Support**: Automatic fallback to pattern-based analysis when AI unavailable
-- **Optional Feature**: Enable with `useAI: true` parameter
-
-### AI Code Analysis (v2.5)
-- **AI-Powered Code Review**: Deep code analysis with quality, security, and performance insights
-- **Issue Detection**: Identify potential bugs, security vulnerabilities, and code smells
-- **Improvement Suggestions**: AI-generated recommendations for better code
-- **Works with AST**: Combines AI insights with AST-based analysis for comprehensive results
-
-### Session History (v2.6)
-- **Persistent Storage**: Save coding sessions to local JSON files
-- **CRUD Operations**: Create, read, update, delete sessions
-- **Search & Filter**: Find past sessions by keyword, tags, or date
-- **Statistics**: Track total sessions, code contexts, and design decisions
-
-### Session Export & Project Profiles (v2.7)
-- **Session Export**: Export sessions to Markdown, JSON, or HTML formats
-- **Multiple Templates**: Default, minimal, detailed, and report templates
-- **Project Profiles**: Manage project-specific settings and configurations
-- **Publishing Config**: Default platforms and settings per project
-- **Code Analysis Config**: Language preferences and diagram types
-- **Documentation Config**: Default document types, language, author info
-- **Team Management**: Store team member information per project
-
-### Git Integration (v2.8)
-- **Repository Status**: View staged, unstaged, and untracked files
-- **Commit History**: Browse commit log with filtering by author, date, grep
-- **Diff Analysis**: View changes with statistics (staged, unstaged, between refs)
-- **Branch Info**: List local and remote branches with tracking info
-- **Git Snapshot**: Capture complete repository state for session context
-- **Design Decision Extraction**: Auto-extract design decisions from commit messages
-- **Session Linking**: Attach Git context to coding sessions
-
-### Session Statistics Dashboard (v2.9)
-- **Overview Analytics**: Total sessions, code contexts, design decisions at a glance
-- **Language Distribution**: Breakdown of programming languages used across sessions
-- **Timeline View**: Session activity over time (daily, weekly, monthly)
-- **Tag Analytics**: Most used tags and tag co-occurrence analysis
-- **Productivity Insights**: Session duration, code output, and efficiency metrics
-- **Trend Analysis**: Compare current period with previous or average
-
-### AI Auto-tagging (v2.10)
-- **Smart Tag Suggestions**: Pattern-based and AI-powered tag recommendations
-- **Confidence Scoring**: Each tag suggestion includes confidence level
-- **Custom Tag Training**: Train the system with custom tag patterns
-- **Configurable Rules**: Define tag rules for file extensions, keywords, patterns
-- **Batch Tagging**: Apply tags to multiple sessions at once
-
-### Custom Templates (v2.11)
-- **Template Management**: Create, edit, delete custom document templates
-- **Variable Substitution**: Support for `{{variable}}`, `${variable}`, `{variable}` formats
-- **Built-in Templates**: README, Session Summary, Weekly Report templates included
-- **Template Preview**: Preview rendered output before applying
-- **Import/Export**: Share templates between projects
-
-### Batch Operations (v2.12)
-- **Sequential Execution**: Run multiple tools in order with dependency management
-- **Parallel Execution**: Execute independent operations concurrently
-- **Dependency Graph**: Topological sort for operation ordering
-- **Job Tracking**: Monitor batch job status, cancel running jobs
-- **Error Handling**: Stop on error or continue with remaining operations
-- **Result Chaining**: Pass output from one operation to next using `$ref` syntax
-
-## Installation
-
-### Claude Code (Recommended)
+#### Claude Code (Recommended)
 
 ```bash
 claude mcp add vibe-coding-mcp npx vibe-coding-mcp
 ```
 
-### npm
+#### npm
 
 ```bash
 npm install -g vibe-coding-mcp
 ```
 
-### Claude Desktop
+#### Claude Desktop
 
 Add to `claude_desktop_config.json`:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -147,6 +78,156 @@ Add to `claude_desktop_config.json`:
   }
 }
 ```
+
+### Example Usage
+
+#### Generate README and Publish to Notion
+```
+User: "Collect the code we wrote today and create a README, then publish to Notion."
+
+Claude: [Uses collect_code_context → generate_dev_document → publish_document]
+```
+
+#### Daily Vibe Coding Log
+```
+User: "Create a session log for today's work."
+
+Claude: [Uses collect_code_context → create_session_log]
+```
+
+#### Session Analytics Dashboard
+```
+User: "Show me my coding productivity statistics for this month."
+
+Claude: [Uses muse_session_stats(action='overview') → muse_session_stats(action='productivity')]
+```
+
+#### Batch Documentation Workflow
+```
+User: "Analyze this code, generate docs, and publish to Notion in one go."
+
+Claude: [Uses muse_batch with sequential operations]
+```
+
+### Supported Platforms
+
+- **Notion** - Full API integration with page creation
+- **GitHub Wiki** - Git-based wiki updates
+- **Obsidian** - Local vault file storage with frontmatter
+- **Confluence** - Atlassian Confluence page publishing
+- **Slack** - Webhook-based message publishing
+- **Discord** - Webhook-based message publishing
+
+---
+
+<a name="korean"></a>
+## 한국어
+
+### 개요
+
+Vibe Coding MCP는 바이브 코딩 세션 중 생성된 코드와 설계 결정을 자동으로 수집, 요약, 문서화, 발행하는 MCP 서버입니다. 문서화 워크플로우를 관리하기 위한 **15가지 강력한 도구**를 제공합니다.
+
+### 주요 기능
+
+- **15개 MCP 도구** - 완벽한 문서화 워크플로우
+- **AST 파싱** - TypeScript, Python, Go 코드 분석
+- **Mermaid 다이어그램** - Class, Flowchart, Sequence, ER, Architecture 다이어그램
+- **다국어 지원** - 한국어/영어 지원
+- **6가지 문서 타입** - README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
+- **6개 플랫폼** - Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
+- **Git 연동** - 상태, 로그, diff, 브랜치, 스냅샷, 설계 결정 추출
+- **세션 분석** - 생산성 인사이트 및 트렌드 분석
+- **AI 기반** - Claude AI 연동으로 향상된 분석
+
+### 15개 MCP 도구
+
+| 도구 | 설명 |
+|------|------|
+| `muse_collect_code_context` | 코드 블록과 대화 요약 수집 |
+| `muse_summarize_design_decisions` | 아키텍처 및 설계 결정 추출 |
+| `muse_generate_dev_document` | README, DESIGN, API, ARCHITECTURE 문서 생성 |
+| `muse_normalize_for_platform` | Notion, GitHub Wiki, Obsidian용 Markdown 변환 |
+| `muse_publish_document` | 외부 플랫폼에 발행 |
+| `muse_create_session_log` | 일일/세션 기반 로그 생성 |
+| `muse_analyze_code` | AST 기반 코드 분석 + Mermaid 다이어그램 |
+| `muse_session_history` | 세션 히스토리 관리 (저장, 조회, 검색) |
+| `muse_export_session` | 세션을 Markdown, JSON, HTML로 내보내기 |
+| `muse_project_profile` | 프로젝트별 설정 관리 |
+| `muse_git` | Git 연동 (상태, 로그, diff, 브랜치, 스냅샷) |
+| `muse_session_stats` | 세션 분석 대시보드 |
+| `muse_auto_tag` | AI 기반 자동 태깅 |
+| `muse_template` | 커스텀 템플릿 관리 |
+| `muse_batch` | 배치 작업 (순차/병렬 실행) |
+
+### 설치
+
+#### Claude Code (권장)
+
+```bash
+claude mcp add vibe-coding-mcp npx vibe-coding-mcp
+```
+
+#### npm
+
+```bash
+npm install -g vibe-coding-mcp
+```
+
+#### Claude Desktop
+
+`claude_desktop_config.json`에 추가:
+
+```json
+{
+  "mcpServers": {
+    "vibe-coding-mcp": {
+      "command": "npx",
+      "args": ["vibe-coding-mcp"]
+    }
+  }
+}
+```
+
+### 사용 예시
+
+#### README 생성 및 Notion 발행
+```
+User: "오늘 작성한 코드를 수집해서 README 만들고 Notion에 발행해줘."
+
+Claude: [collect_code_context → generate_dev_document → publish_document 사용]
+```
+
+#### 일일 바이브 코딩 로그
+```
+User: "오늘 작업 세션 로그 만들어줘."
+
+Claude: [collect_code_context → create_session_log 사용]
+```
+
+#### 세션 분석 대시보드
+```
+User: "이번 달 코딩 생산성 통계 보여줘."
+
+Claude: [muse_session_stats(action='overview') → muse_session_stats(action='productivity') 사용]
+```
+
+#### 배치 문서화 워크플로우
+```
+User: "이 코드 분석하고 문서 생성해서 Notion에 발행해줘."
+
+Claude: [muse_batch로 순차 작업 실행]
+```
+
+### 지원 플랫폼
+
+- **Notion** - 페이지 생성 API 완전 통합
+- **GitHub Wiki** - Git 기반 위키 업데이트
+- **Obsidian** - 프론트매터 지원 로컬 볼트 파일 저장
+- **Confluence** - Atlassian Confluence 페이지 발행
+- **Slack** - 웹훅 기반 메시지 발행
+- **Discord** - 웹훅 기반 메시지 발행
+
+---
 
 ## Environment Variables
 
@@ -166,157 +247,22 @@ GITHUB_REPO=owner/repo
 CONFLUENCE_BASE_URL=https://your-domain.atlassian.net
 CONFLUENCE_USERNAME=your_email@example.com
 CONFLUENCE_API_TOKEN=your_api_token_here
-CONFLUENCE_SPACE_KEY=YOURSPACE
 
-# Slack (optional, webhook URL passed via tool parameter)
+# Slack/Discord (optional)
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
-
-# Discord (optional, webhook URL passed via tool parameter)
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
-## Demo Scenarios
+## Links
 
-### 1. Generate README and Publish to Notion
-
-```
-User: Collect the code we wrote today and create a README, then publish to Notion.
-
-Claude: [Uses collect_code_context → generate_dev_document → normalize_for_platform → publish_document]
-```
-
-### 2. Create Design Decision Docs for GitHub Wiki
-
-```
-User: Summarize our design decisions and publish to GitHub Wiki.
-
-Claude: [Uses summarize_design_decisions → generate_dev_document → normalize_for_platform → publish_document]
-```
-
-### 3. Daily Vibe Coding Log
-
-```
-User: Create a session log for today's work.
-
-Claude: [Uses collect_code_context → create_session_log]
-```
-
-### 4. Git-Aware Session Documentation
-
-```
-User: Capture my current Git state and create a session with design decisions from commits.
-
-Claude: [Uses muse_git(action='snapshot') → muse_git(action='extractDecisions') → muse_session_history(action='save')]
-```
-
-### 5. Complete Session Export with Git Context
-
-```
-User: Export all my sessions from this week with Git information.
-
-Claude: [Uses muse_git(action='linkToSession') → muse_export_session(format='markdown')]
-```
-
-### 6. Session Analytics Dashboard
-
-```
-User: Show me my coding productivity statistics for this month.
-
-Claude: [Uses muse_session_stats(action='overview') → muse_session_stats(action='productivity') → muse_session_stats(action='trends')]
-```
-
-### 7. Auto-tag and Organize Sessions
-
-```
-User: Analyze my sessions and suggest relevant tags.
-
-Claude: [Uses muse_auto_tag(action='suggest') → muse_auto_tag(action='apply')]
-```
-
-### 8. Generate Custom Report with Template
-
-```
-User: Create a weekly report using the team report template.
-
-Claude: [Uses muse_template(action='apply', templateId='weekly-report') → muse_publish_document]
-```
-
-### 9. Batch Documentation Workflow
-
-```
-User: Analyze this code, generate docs, and publish to Notion in one go.
-
-Claude: [Uses muse_batch(action='execute', operations=[
-  {tool: 'muse_analyze_code', params: {...}},
-  {tool: 'muse_generate_dev_document', params: {...}, dependsOn: ['op_0']},
-  {tool: 'muse_publish_document', params: {...}, dependsOn: ['op_1']}
-])]
-```
-
-## Supported Platforms
-
-- **Notion**: Full API integration with page creation
-- **GitHub Wiki**: Git-based wiki updates
-- **Obsidian**: Local vault file storage with frontmatter support
-- **Confluence**: Atlassian Confluence page publishing
-- **Slack**: Webhook-based message publishing
-- **Discord**: Webhook-based message publishing
-
-## Project Structure
-
-```
-src/
-├── stdio.ts              # MCP server entry point (stdio transport)
-├── index.ts              # HTTP/SSE server entry point
-├── core/
-│   ├── schemas.ts        # Zod validation schemas
-│   ├── errors.ts         # Structured error classes
-│   ├── cache.ts          # LRU cache & memoization
-│   ├── security.ts       # Path traversal, SSRF, timeout utilities
-│   ├── logger.ts         # Structured JSON logging
-│   └── config.ts         # Platform configuration validation
-├── tools/                # 15 MCP tools
-├── platforms/            # Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
-├── types/                # TypeScript interfaces
-└── utils/
-    ├── markdown.ts       # Markdown processing
-    ├── astParser.ts      # AST parsing for TypeScript, Python, Go
-    ├── diagramGenerator.ts # Mermaid diagram generation
-    ├── gitExecutor.ts    # Safe Git command execution
-    └── gitParsers.ts     # Git output parsing utilities
-```
-
-## Development
-
-```bash
-# Watch mode
-npm run dev
-
-# Build
-npm run build
-
-# Start (HTTP/SSE mode)
-npm start
-
-# Start (stdio mode for Claude Desktop)
-npm run stdio
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-## Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| `@modelcontextprotocol/sdk` | MCP server SDK |
-| `@notionhq/client` | Notion API integration |
-| `zod` | Input validation |
-| `typescript` | TypeScript compiler |
+- [npm Package](https://www.npmjs.com/package/vibe-coding-mcp)
+- [GitHub Repository](https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp)
+- [MCP Registry](https://registry.modelcontextprotocol.io)
 
 ## License
 
 MIT
+
+## Author
+
+**MUSE-CODE-SPACE** - [GitHub](https://github.com/MUSE-CODE-SPACE)
