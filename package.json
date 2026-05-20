@@ -1,6 +1,6 @@
 {
   "name": "vibe-coding-mcp",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "mcpName": "io.github.MUSE-CODE-SPACE/vibe-coding",
   "description": "MCP server for automatically collecting, summarizing, documenting, and publishing vibe coding sessions",
   "main": "dist/index.js",

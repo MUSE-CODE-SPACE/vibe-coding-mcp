@@ -7,12 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned (Phase 3)
+(no unreleased changes)
 
-- Unify the two entry points (`src/index.ts` SSE / 7 tools and `src/stdio.ts` / 15 tools)
-  into a single transport-agnostic surface.
-- Migrate from the low-level `Server` API to the high-level `McpServer` builder.
-- Add MCP `prompts` and `resources` capabilities.
+## [2.14.0] - 2026-05-20
+
+### Changed
+
+- **Entry-point unification.** `src/index.ts` (HTTP) and `src/stdio.ts`
+  (stdio) now both consume a single shared tool registry
+  (`src/core/toolRegistry.ts`) and the new
+  `src/core/mcpServerFactory.ts`. Both entry points expose the **same 15
+  tools, 3 resources, and 3 prompts** — the SSE-vs-stdio drift documented
+  in v2.13.0 is resolved.
+- **High-level `McpServer` migration.** Both entry points moved from the
+  low-level `Server + setRequestHandler(CallToolRequestSchema, ...)`
+  pattern to `McpServer.registerTool() / .resource() / .prompt()`.
+- **Transport: SSE → Streamable HTTP.** `src/index.ts` now uses
+  `StreamableHTTPServerTransport` (MCP 2025-03-26 spec) at `POST /mcp`.
+  The legacy `/sse` route returns HTTP 410 with a pointer to `/mcp`.
+
+### Added
+
+- **MCP Resources** — 3 logical resources:
+  - `vibe-coding://sessions/list` — list of captured sessions.
+  - `vibe-coding://sessions/{id}` — full session detail (template).
+  - `vibe-coding://config` — current platform configuration.
+- **MCP Prompts** — 3 reusable workflows:
+  - `daily-vibe-log` — assemble today's captured sessions into a daily log.
+  - `document-session` — fetch a session, extract decisions, generate a dev
+    document, optionally publish.
+  - `refactor-context` — produce a refactor-ready PR description from a
+    session (decisions + AST analysis + git diff).
+- **Auto-capture hook guide** — `docs/AUTO_CAPTURE.md` documents how to
+  wire `PostToolUse` / `Stop` hooks in `~/.claude/settings.json` so Claude
+  Code sessions auto-capture into `muse_session_history`.
+- **34 new tests** covering the tool registry, resources, prompts, and the
+  McpServer factory (149 → 183 passing tests).
 
 ## [2.13.0] - 2026-05-20
 

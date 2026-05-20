@@ -253,20 +253,50 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
-## Architecture notes (current state, Phase 1 baseline)
+## Architecture (v2.14.0 — unified registry)
 
-> The repository currently ships **two entry points** that have drifted apart:
->
-> - `src/index.ts` — SSE (HTTP) transport, exposes **7 tools**.
-> - `src/stdio.ts` — stdio transport (used by `bin: vibe-coding-mcp`), exposes
->   **15 tools**.
->
-> Both share the same tool implementations under `src/tools/`, but their
-> registries are wired by hand and have diverged. Full unification onto a
-> single transport-agnostic `McpServer` (along with MCP `prompts` and
-> `resources` support) is planned for Phase 3 and tracked in
-> [`CHANGELOG.md`](./CHANGELOG.md). For now, **prefer the stdio entry
-> point** (`vibe-coding-mcp` binary) for full tool coverage.
+> As of v2.14.0 both entry points share a **single transport-agnostic
+> registry** and expose the same surface (15 tools, 3 resources, 3 prompts).
+> The SSE-vs-stdio drift documented in v2.13.0 is resolved.
+
+```
+                       src/core/mcpServerFactory.ts
+                                  │
+              ┌───────────────────┼───────────────────┐
+              ▼                   ▼                   ▼
+       toolRegistry.ts      resources.ts         prompts.ts
+       (15 muse_* tools)    (sessions/list,      (daily-vibe-log,
+              │              session/{id},        document-session,
+              │              config)              refactor-context)
+              ▼
+       src/tools/*.ts (existing tool implementations)
+
+           ▲                                            ▲
+           │                                            │
+  src/index.ts (Streamable HTTP)            src/stdio.ts (stdio)
+  POST /mcp at :3000                        used by `vibe-coding-mcp` bin
+```
+
+Key changes:
+
+- **Single tool registry.** `src/core/toolRegistry.ts` is the only place that
+  enumerates the 15 `muse_*` tools. Adding a tool is a one-line edit.
+- **High-level `McpServer`.** Both entries call `createMcpServer()` from
+  `src/core/mcpServerFactory.ts`, which uses
+  `McpServer.registerTool() / .resource() / .prompt()` (SDK 1.25+ API).
+- **Streamable HTTP, not SSE.** `src/index.ts` exposes the MCP 2025-03-26
+  transport at `POST /mcp`. The old `/sse` route returns HTTP 410.
+
+### Capabilities matrix
+
+| Surface | Count | Lives in | Examples |
+|---------|-------|----------|----------|
+| **Tools** | 15 | `src/core/toolRegistry.ts` → `src/tools/*.ts` | `muse_collect_code_context`, `muse_publish_document`, `muse_git`, `muse_batch` |
+| **Resources** | 3 | `src/core/resources.ts` | `vibe-coding://sessions/list`, `vibe-coding://sessions/{id}`, `vibe-coding://config` |
+| **Prompts** | 3 | `src/core/prompts.ts` | `daily-vibe-log`, `document-session`, `refactor-context` |
+
+Auto-capture every Claude Code session into the session store: see
+[`docs/AUTO_CAPTURE.md`](./docs/AUTO_CAPTURE.md).
 
 ## Security
 

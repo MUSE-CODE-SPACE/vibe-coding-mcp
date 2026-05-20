@@ -1,168 +1,109 @@
 #!/usr/bin/env node
+/**
+ * HTTP entry point — Streamable HTTP transport (MCP 2025-03-26).
+ *
+ * As of v2.14.0 this file is a transport-bind around the shared
+ * `createMcpServer()` factory. It exposes the *same* 15 tools, 3 resources,
+ * and 3 prompts as the stdio entry point in `src/stdio.ts` — the old SSE /
+ * 7-tool drift is gone.
+ *
+ * The previous `SSEServerTransport` (deprecated in the MCP spec) has been
+ * replaced with `StreamableHTTPServerTransport`. The SSE GET endpoint is
+ * preserved as a compatibility shim that points clients at `/mcp`.
+ */
 import express from 'express';
 import cors from 'cors';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
+import { randomUUID } from 'node:crypto';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import 'dotenv/config';
-// Core
-import { createErrorResponse, ToolError } from './core/errors.js';
-import { validateInput, CollectCodeContextSchema, SummarizeDesignDecisionsSchema, GenerateDevDocumentSchema, NormalizeForPlatformSchema, PublishDocumentSchema, CreateSessionLogSchema, AnalyzeCodeSchema, } from './core/schemas.js';
-// Tools
-import { collectCodeContext, collectCodeContextSchema } from './tools/collectCodeContext.js';
-import { summarizeDesignDecisions, summarizeDesignDecisionsSchema } from './tools/summarizeDesignDecisions.js';
-import { generateDevDocument, generateDevDocumentSchema } from './tools/generateDevDocument.js';
-import { normalizeForPlatform, normalizeForPlatformSchema } from './tools/normalizeForPlatform.js';
-import { publishDocument, publishDocumentSchema } from './tools/publishDocument.js';
-import { createSessionLog, createSessionLogSchema } from './tools/createSessionLog.js';
-import { analyzeCodeTool, analyzeCodeSchema } from './tools/analyzeCode.js';
+import { createMcpServer, getCapabilityCounts, SERVER_NAME, SERVER_VERSION } from './core/mcpServerFactory.js';
+import { getToolNames } from './core/toolRegistry.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
-app.use(express.json());
-// Store active transports
+app.use(express.json({ limit: '4mb' }));
+/**
+ * Active transports keyed by session ID. We run in stateful mode so a
+ * single client conversation re-uses the same transport across requests.
+ */
 const transports = new Map();
-// Tool handlers with validation
-const toolHandlers = {
-    muse_collect_code_context: (args) => {
-        const validated = validateInput(CollectCodeContextSchema, args);
-        return collectCodeContext(validated);
-    },
-    muse_summarize_design_decisions: (args) => {
-        const validated = validateInput(SummarizeDesignDecisionsSchema, args);
-        return summarizeDesignDecisions(validated);
-    },
-    muse_generate_dev_document: (args) => {
-        const validated = validateInput(GenerateDevDocumentSchema, args);
-        return generateDevDocument(validated);
-    },
-    muse_normalize_for_platform: (args) => {
-        const validated = validateInput(NormalizeForPlatformSchema, args);
-        return normalizeForPlatform(validated);
-    },
-    muse_publish_document: async (args) => {
-        const validated = validateInput(PublishDocumentSchema, args);
-        return publishDocument(validated);
-    },
-    muse_create_session_log: async (args) => {
-        const validated = validateInput(CreateSessionLogSchema, args);
-        return createSessionLog(validated);
-    },
-    muse_analyze_code: (args) => {
-        const validated = validateInput(AnalyzeCodeSchema, args);
-        return analyzeCodeTool(validated);
-    },
-};
-function isValidToolName(name) {
-    return name in toolHandlers;
-}
-// Create MCP Server instance
-function createMCPServer() {
-    const server = new Server({
-        name: 'vibe-coding-mcp',
-        version: '2.0.0',
-    }, {
-        capabilities: {
-            tools: {},
-        },
-    });
-    // List available tools
-    server.setRequestHandler(ListToolsRequestSchema, async () => {
-        return {
-            tools: [
-                collectCodeContextSchema,
-                summarizeDesignDecisionsSchema,
-                generateDevDocumentSchema,
-                normalizeForPlatformSchema,
-                publishDocumentSchema,
-                createSessionLogSchema,
-                analyzeCodeSchema,
-            ],
-        };
-    });
-    // Handle tool calls
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
-        const { name, arguments: args } = request.params;
-        try {
-            if (!isValidToolName(name)) {
-                throw new ToolError(`Unknown tool: ${name}`, 'NOT_FOUND', { tool: name });
-            }
-            const handler = toolHandlers[name];
-            const result = await handler(args);
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: JSON.stringify(result, null, 2),
-                    },
-                ],
-            };
-        }
-        catch (error) {
-            return createErrorResponse(error);
-        }
-    });
-    return server;
-}
-// Health check endpoint
+// Health / discovery endpoint.
 app.get('/', (_req, res) => {
+    const counts = getCapabilityCounts();
     res.json({
-        name: 'vibe-coding-mcp',
-        version: '2.0.0',
-        description: 'MCP server for vibe coding documentation - Enhanced with AST analysis, Mermaid diagrams, multi-language support',
+        name: SERVER_NAME,
+        version: SERVER_VERSION,
+        description: 'MCP server for vibe coding documentation — unified tool registry, Streamable HTTP transport',
         status: 'running',
-        tools: Object.keys(toolHandlers),
-        features: [
-            'AST parsing (TypeScript, Python, Go)',
-            'Mermaid diagram generation',
-            'Multi-language support (Korean/English)',
-            'Multiple document types (README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE)',
-            'Multiple platforms (Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord)',
-            'Input validation with Zod',
-            'Structured error handling'
-        ]
+        transport: 'streamable-http',
+        endpoints: {
+            mcp: '/mcp',
+            health: '/health',
+        },
+        capabilities: {
+            tools: counts.tools,
+            resources: counts.resources,
+            prompts: counts.prompts,
+        },
+        toolNames: getToolNames(),
     });
 });
-// SSE endpoint for MCP connection
-app.get('/sse', async (_req, res) => {
-    console.log('New SSE connection established');
-    const transport = new SSEServerTransport('/message', res);
-    const sessionId = crypto.randomUUID();
-    transports.set(sessionId, transport);
-    const server = createMCPServer();
-    res.on('close', () => {
-        console.log('SSE connection closed');
-        transports.delete(sessionId);
+app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', version: SERVER_VERSION, ...getCapabilityCounts() });
+});
+/**
+ * Main MCP endpoint. Accepts POST (JSON-RPC requests), GET (SSE notification
+ * stream), and DELETE (session termination) per the Streamable HTTP spec.
+ */
+async function handleMcpRequest(req, res) {
+    const sessionId = req.headers['mcp-session-id'] ?? undefined;
+    let transport;
+    if (sessionId) {
+        transport = transports.get(sessionId);
+    }
+    if (!transport) {
+        // Initialize a new transport + server for the first request of a session.
+        transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (sid) => {
+                transports.set(sid, transport);
+            },
+        });
+        transport.onclose = () => {
+            const sid = transport.sessionId;
+            if (sid) {
+                transports.delete(sid);
+            }
+        };
+        const server = createMcpServer();
+        await server.connect(transport);
+    }
+    await transport.handleRequest(req, res, req.body);
+}
+app.post('/mcp', (req, res) => {
+    void handleMcpRequest(req, res);
+});
+app.get('/mcp', (req, res) => {
+    void handleMcpRequest(req, res);
+});
+app.delete('/mcp', (req, res) => {
+    void handleMcpRequest(req, res);
+});
+// Back-compat shim: old clients used /sse. Tell them where /mcp lives.
+app.get('/sse', (_req, res) => {
+    res
+        .status(410)
+        .json({
+        error: 'sse_transport_removed',
+        message: 'The legacy SSE transport was removed in v2.14.0. Use the Streamable HTTP transport at POST /mcp.',
+        mcpEndpoint: '/mcp',
     });
-    await server.connect(transport);
 });
-// Message endpoint for MCP communication
-app.post('/message', async (req, res) => {
-    const sessionId = req.query.sessionId;
-    if (!sessionId) {
-        // Handle direct message without session
-        const transport = Array.from(transports.values())[0];
-        if (transport) {
-            await transport.handlePostMessage(req, res);
-        }
-        else {
-            res.status(400).json({ error: 'No active session' });
-        }
-        return;
-    }
-    const transport = transports.get(sessionId);
-    if (transport) {
-        await transport.handlePostMessage(req, res);
-    }
-    else {
-        res.status(404).json({ error: 'Session not found' });
-    }
-});
-// Start server
 app.listen(PORT, () => {
-    console.log(`Vibe Coding MCP Server v2.0.0 running on http://localhost:${PORT}`);
-    console.log(`SSE endpoint: http://localhost:${PORT}/sse`);
-    console.log(`Message endpoint: http://localhost:${PORT}/message`);
+    const counts = getCapabilityCounts();
+    console.log(`${SERVER_NAME} v${SERVER_VERSION} running on http://localhost:${PORT}`);
+    console.log(`Streamable HTTP endpoint: http://localhost:${PORT}/mcp`);
+    console.log(`Capabilities: ${counts.tools} tools, ${counts.resources} resources, ${counts.prompts} prompts`);
 });
 //# sourceMappingURL=index.js.map

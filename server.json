@@ -6,12 +6,12 @@
     "url": "https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp",
     "source": "github"
   },
-  "version": "2.12.1",
+  "version": "2.14.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "vibe-coding-mcp",
-      "version": "2.12.1",
+      "version": "2.14.0",
       "transport": {
         "type": "stdio"
       }
