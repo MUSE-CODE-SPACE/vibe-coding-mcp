@@ -1,322 +1,236 @@
-# Vibe Coding MCP
+# vibe-coding-mcp
 
-**Vibe Coding Session Documentation MCP Server**
+> Auto-documents your AI coding sessions — wire it as a Claude Code hook and your daily README / design-decision log / refactor-PR description writes itself.
 
-> Automatically collect, summarize, document, and publish your vibe coding sessions
-
-[![npm version](https://badge.fury.io/js/vibe-coding-mcp.svg)](https://www.npmjs.com/package/vibe-coding-mcp)
+[![CI](https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/vibe-coding-mcp.svg)](https://www.npmjs.com/package/vibe-coding-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)
 
-[English](#english) | [한국어](#korean)
+[English](#english) · [한국어](#한국어)
 
 ---
 
 <a name="english"></a>
-## English
+## Why vibe-coding?
 
-### Overview
+You spent four hours pair-programming with Claude. You made three architectural decisions, wrote eight files, and reverted twice. Tomorrow you will not remember why you picked the second option in commit `a1b2c3d` over the first one you tried. Most people solve this with manual journaling that lasts two weeks, or by trawling `git log` after the fact.
 
-Vibe Coding MCP is an MCP server that automatically collects, summarizes, documents, and publishes code and design decisions created during vibe coding sessions. It provides **15 powerful tools** for managing your coding documentation workflow.
+vibe-coding-mcp solves it differently: it sits as an MCP server next to your editor, **collects code blocks and design decisions out of the conversation**, generates **README / DESIGN / API / ARCHITECTURE** documents from them, and **publishes to Notion / GitHub Wiki / Obsidian / Confluence / Slack / Discord** — all from inside the chat with Claude. Wire it as a Claude Code `PostToolUse` + `Stop` hook (one block of JSON, see [Quickstart](#5-minute-quickstart)) and every session auto-captures into `~/.vibe-coding-mcp/sessions/` without you typing anything. The bundled `daily-vibe-log` prompt then rolls today's captures into one document.
 
-### Features
+The Phase 3 refactor (v2.14.0, May 2026) collapsed the two-entry-point drift (`index.ts` had 7 tools, `stdio.ts` had 15) into a **single transport-agnostic registry**, so HTTP and stdio now expose the same 15 tools, 3 resources, and 3 prompts.
 
-- **15 MCP Tools** - Complete documentation workflow
-- **AST Parsing** - TypeScript, Python, Go code analysis
-- **Mermaid Diagrams** - Class, Flowchart, Sequence, ER, Architecture diagrams
-- **Multi-language** - Korean/English support
-- **6 Document Types** - README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
-- **6 Platforms** - Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
-- **Git Integration** - Status, log, diff, branch, snapshot, design decision extraction
-- **Session Analytics** - Productivity insights and trend analysis
-- **AI-Powered** - Claude AI integration for enhanced analysis
+## What's new in v2.14.0
 
-### 15 MCP Tools
+- **One registry, two entry points, zero drift.** `src/core/toolRegistry.ts` is the single source of truth — both `index.ts` (Streamable HTTP) and `stdio.ts` (bin) load the same 15 tools, 3 resources, and 3 prompts.
+- **Migrated to high-level `McpServer` API** (SDK 1.25+). `McpServer.registerTool() / .resource() / .prompt()` instead of low-level `setRequestHandler(CallToolRequestSchema)`. Adding a tool is now a one-line `register()` call.
+- **Streamable HTTP (MCP 2025-03-26), not SSE.** `POST /mcp` at `:3000`. The legacy `/sse` route returns HTTP 410 with a pointer.
+- **3 new MCP Resources for `@-mention`.** `vibe-coding://sessions/list` (captured sessions), `vibe-coding://sessions/{id}` (one session in full), `vibe-coding://config` (current platform creds).
+- **3 new MCP Prompts.** `daily-vibe-log` (roll today's sessions into one doc), `document-session` (one session → README/DESIGN/API/etc. → publish), `refactor-context` (session → PR description with decisions + AST analysis + git diff).
+- **+34 tests** (149 → 183 passing) covering the registry, resources, prompts, and the McpServer factory.
 
-| Tool | Description |
-|------|-------------|
-| `muse_collect_code_context` | Collect code blocks and conversation summaries |
-| `muse_summarize_design_decisions` | Extract architectural and design decisions |
-| `muse_generate_dev_document` | Generate README, DESIGN, API, ARCHITECTURE docs |
-| `muse_normalize_for_platform` | Convert Markdown for Notion, GitHub Wiki, Obsidian |
-| `muse_publish_document` | Publish to external platforms |
-| `muse_create_session_log` | Create daily/session-based logs |
-| `muse_analyze_code` | AST-based code analysis with Mermaid diagrams |
-| `muse_session_history` | Manage session history (save, retrieve, search) |
-| `muse_export_session` | Export sessions to Markdown, JSON, HTML |
-| `muse_project_profile` | Manage project-specific settings |
-| `muse_git` | Git integration (status, log, diff, branch, snapshot) |
-| `muse_session_stats` | Session analytics dashboard |
-| `muse_auto_tag` | AI-powered auto-tagging |
-| `muse_template` | Custom template management |
-| `muse_batch` | Batch operations (sequential/parallel) |
-
-### Installation
-
-#### Claude Code (Recommended)
+## 5-minute Quickstart
 
 ```bash
-claude mcp add vibe-coding-mcp npx vibe-coding-mcp
+# 1. Install via Claude Code
+claude mcp add vibe-coding-mcp -- npx -y vibe-coding-mcp
 ```
 
-#### npm
+2. Wire it as a Claude Code hook so every session auto-captures. Add this to `~/.claude/settings.json`:
 
-```bash
-npm install -g vibe-coding-mcp
-```
-
-#### Claude Desktop
-
-Add to `claude_desktop_config.json`:
-
-```json
+```jsonc
 {
   "mcpServers": {
     "vibe-coding-mcp": {
       "command": "npx",
-      "args": ["vibe-coding-mcp"]
+      "args": ["-y", "vibe-coding-mcp"]
     }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [{
+          "type": "command",
+          "command": "claude mcp call vibe-coding-mcp muse_session_history '{\"action\":\"save\",\"title\":\"auto-capture\",\"summary\":\"PostToolUse\",\"tags\":[\"auto-capture\"]}' >/dev/null 2>&1 || true"
+        }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "claude mcp call vibe-coding-mcp muse_create_session_log '{\"title\":\"Claude Code session\",\"summary\":\"Stop hook\",\"options\":{\"logType\":\"session\"}}' >/dev/null 2>&1 || true"
+        }]
+      }
+    ]
   }
 }
 ```
 
-### Example Usage
-
-#### Generate README and Publish to Notion
-```
-User: "Collect the code we wrote today and create a README, then publish to Notion."
-
-Claude: [Uses collect_code_context → generate_dev_document → publish_document]
-```
-
-#### Daily Vibe Coding Log
-```
-User: "Create a session log for today's work."
-
-Claude: [Uses collect_code_context → create_session_log]
-```
-
-#### Session Analytics Dashboard
-```
-User: "Show me my coding productivity statistics for this month."
-
-Claude: [Uses muse_session_stats(action='overview') → muse_session_stats(action='productivity')]
-```
-
-#### Batch Documentation Workflow
-```
-User: "Analyze this code, generate docs, and publish to Notion in one go."
-
-Claude: [Uses muse_batch with sequential operations]
-```
-
-### Supported Platforms
-
-- **Notion** - Full API integration with page creation
-- **GitHub Wiki** - Git-based wiki updates
-- **Obsidian** - Local vault file storage with frontmatter
-- **Confluence** - Atlassian Confluence page publishing
-- **Slack** - Webhook-based message publishing
-- **Discord** - Webhook-based message publishing
-
----
-
-<a name="korean"></a>
-## 한국어
-
-### 개요
-
-Vibe Coding MCP는 바이브 코딩 세션 중 생성된 코드와 설계 결정을 자동으로 수집, 요약, 문서화, 발행하는 MCP 서버입니다. 문서화 워크플로우를 관리하기 위한 **15가지 강력한 도구**를 제공합니다.
-
-### 주요 기능
-
-- **15개 MCP 도구** - 완벽한 문서화 워크플로우
-- **AST 파싱** - TypeScript, Python, Go 코드 분석
-- **Mermaid 다이어그램** - Class, Flowchart, Sequence, ER, Architecture 다이어그램
-- **다국어 지원** - 한국어/영어 지원
-- **6가지 문서 타입** - README, DESIGN, TUTORIAL, CHANGELOG, API, ARCHITECTURE
-- **6개 플랫폼** - Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord
-- **Git 연동** - 상태, 로그, diff, 브랜치, 스냅샷, 설계 결정 추출
-- **세션 분석** - 생산성 인사이트 및 트렌드 분석
-- **AI 기반** - Claude AI 연동으로 향상된 분석
-
-### 15개 MCP 도구
-
-| 도구 | 설명 |
-|------|------|
-| `muse_collect_code_context` | 코드 블록과 대화 요약 수집 |
-| `muse_summarize_design_decisions` | 아키텍처 및 설계 결정 추출 |
-| `muse_generate_dev_document` | README, DESIGN, API, ARCHITECTURE 문서 생성 |
-| `muse_normalize_for_platform` | Notion, GitHub Wiki, Obsidian용 Markdown 변환 |
-| `muse_publish_document` | 외부 플랫폼에 발행 |
-| `muse_create_session_log` | 일일/세션 기반 로그 생성 |
-| `muse_analyze_code` | AST 기반 코드 분석 + Mermaid 다이어그램 |
-| `muse_session_history` | 세션 히스토리 관리 (저장, 조회, 검색) |
-| `muse_export_session` | 세션을 Markdown, JSON, HTML로 내보내기 |
-| `muse_project_profile` | 프로젝트별 설정 관리 |
-| `muse_git` | Git 연동 (상태, 로그, diff, 브랜치, 스냅샷) |
-| `muse_session_stats` | 세션 분석 대시보드 |
-| `muse_auto_tag` | AI 기반 자동 태깅 |
-| `muse_template` | 커스텀 템플릿 관리 |
-| `muse_batch` | 배치 작업 (순차/병렬 실행) |
-
-### 설치
-
-#### Claude Code (권장)
-
-```bash
-claude mcp add vibe-coding-mcp npx vibe-coding-mcp
-```
-
-#### npm
-
-```bash
-npm install -g vibe-coding-mcp
-```
-
-#### Claude Desktop
-
-`claude_desktop_config.json`에 추가:
-
-```json
-{
-  "mcpServers": {
-    "vibe-coding-mcp": {
-      "command": "npx",
-      "args": ["vibe-coding-mcp"]
-    }
-  }
-}
-```
-
-### 사용 예시
-
-#### README 생성 및 Notion 발행
-```
-User: "오늘 작성한 코드를 수집해서 README 만들고 Notion에 발행해줘."
-
-Claude: [collect_code_context → generate_dev_document → publish_document 사용]
-```
-
-#### 일일 바이브 코딩 로그
-```
-User: "오늘 작업 세션 로그 만들어줘."
-
-Claude: [collect_code_context → create_session_log 사용]
-```
-
-#### 세션 분석 대시보드
-```
-User: "이번 달 코딩 생산성 통계 보여줘."
-
-Claude: [muse_session_stats(action='overview') → muse_session_stats(action='productivity') 사용]
-```
-
-#### 배치 문서화 워크플로우
-```
-User: "이 코드 분석하고 문서 생성해서 Notion에 발행해줘."
-
-Claude: [muse_batch로 순차 작업 실행]
-```
-
-### 지원 플랫폼
-
-- **Notion** - 페이지 생성 API 완전 통합
-- **GitHub Wiki** - Git 기반 위키 업데이트
-- **Obsidian** - 프론트매터 지원 로컬 볼트 파일 저장
-- **Confluence** - Atlassian Confluence 페이지 발행
-- **Slack** - 웹훅 기반 메시지 발행
-- **Discord** - 웹훅 기반 메시지 발행
-
----
-
-## Environment Variables
-
-```env
-# Anthropic API (optional, for AI-powered analysis)
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Notion API (optional)
-NOTION_API_KEY=your_notion_api_key_here
-NOTION_DATABASE_ID=your_database_id_here
-
-# GitHub (optional, for Wiki publishing)
-GITHUB_TOKEN=your_github_token_here
-GITHUB_REPO=owner/repo
-
-# Confluence (optional)
-CONFLUENCE_BASE_URL=https://your-domain.atlassian.net
-CONFLUENCE_USERNAME=your_email@example.com
-CONFLUENCE_API_TOKEN=your_api_token_here
-
-# Slack/Discord (optional)
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-```
-
-## Architecture (v2.14.0 — unified registry)
-
-> As of v2.14.0 both entry points share a **single transport-agnostic
-> registry** and expose the same surface (15 tools, 3 resources, 3 prompts).
-> The SSE-vs-stdio drift documented in v2.13.0 is resolved.
+3. Restart Claude Code. The next time you edit a file in a session, capture starts.
+4. After a session, try this in Claude:
 
 ```
-                       src/core/mcpServerFactory.ts
-                                  │
-              ┌───────────────────┼───────────────────┐
-              ▼                   ▼                   ▼
-       toolRegistry.ts      resources.ts         prompts.ts
-       (15 muse_* tools)    (sessions/list,      (daily-vibe-log,
-              │              session/{id},        document-session,
-              │              config)              refactor-context)
+오늘 캡처된 세션들 합쳐서 daily vibe log 만들어줘. (use the /daily-vibe-log prompt)
+```
+
+5. Expected: Claude calls `muse_session_history(action='list', filterTags=['auto-capture'])` to gather today's sessions, then `muse_create_session_log` to compose, then offers to publish to Notion / Obsidian / GitHub Wiki. See [`docs/AUTO_CAPTURE.md`](./docs/AUTO_CAPTURE.md) for hook customization (e.g. piping `git diff --stat` into the capture payload).
+
+## Real use cases
+
+### 1. "I want today's coding session as a daily log without lifting a finger"
+**Problem:** You'll never sit down at the end of the day and write a journal entry. Nobody does.
+**With this MCP:** the `PostToolUse` + `Stop` hooks save sessions automatically into `~/.vibe-coding-mcp/sessions/`. Next morning, run the `/daily-vibe-log` prompt and Claude reads `vibe-coding://sessions/list` for today, compiles a Markdown log (problems, decisions, code blocks, blockers), and offers to publish to Notion.
+**Why it's better than git log or Notion templates:** git log knows *what* you committed, not *why* you picked option B over option A. The session capture preserves the conversation context that the diff doesn't.
+
+### 2. "I need a PR description for a refactor that touched 11 files"
+**Problem:** Writing a good PR description for a refactor takes 15 minutes of re-reading the diff. Most refactor PRs end up with a one-liner and reviewers hate it.
+**With this MCP:** invoke the `/refactor-context` prompt against the session you just finished. The prompt chains `muse_session_history(get)` → `muse_summarize_design_decisions` → `muse_analyze_code` (AST + Mermaid diagram) → `muse_git(diff)` and outputs a structured PR description with: *Why* (decisions), *What changed* (file-by-file from AST), *Trade-offs* (decisions section), and *How to review* (diagram of new architecture).
+**Why it's better than asking Claude to "write a PR description":** the prompt explicitly pulls the **design-decision summary** out of the session, not just the diff — reviewers get the why, not a paraphrased diff.
+
+### 3. "I want my Obsidian vault to fill itself with my design decisions"
+**Problem:** You make architectural decisions during pair-programming and they evaporate. ADR templates require manual discipline you don't have.
+**With this MCP:** call `muse_summarize_design_decisions` over your session, then `muse_publish_document({ platform: 'obsidian', vault: '~/MyVault/decisions' })`. The Obsidian platform writer adds YAML frontmatter (tags, date, session-id back-reference), so the new note shows up correctly in your vault graph view.
+**Why it's better than a `Notes/ADR-template.md`:** the decision text is generated from the actual code+conversation, not from your tired post-session memory. And it works across **6 platforms** (Notion, GitHub Wiki, Obsidian, Confluence, Slack, Discord) with one tool call.
+
+## Tools / Resources / Prompts
+
+| Name | Type | What it does |
+|------|------|--------------|
+| `muse_collect_code_context` | tool | Pull code blocks + conversation summary out of a chat into a structured session |
+| `muse_summarize_design_decisions` | tool | Extract architectural / design decisions (problem → options → choice → trade-off) |
+| `muse_analyze_code` | tool | AST analysis (TypeScript / Python / Go) + Mermaid diagrams (Class / Flow / Sequence / ER / Architecture) |
+| `muse_generate_dev_document` | tool | README / DESIGN / TUTORIAL / CHANGELOG / API / ARCHITECTURE generator |
+| `muse_normalize_for_platform` | tool | Markdown normalization for Notion / GitHub Wiki / Obsidian / Confluence / Slack / Discord quirks |
+| `muse_publish_document` | tool | Publish to any of the 6 supported platforms |
+| `muse_create_session_log` | tool | Daily or per-session log composition |
+| `muse_session_history` | tool | `save / get / update / delete / list / search / stats` over `~/.vibe-coding-mcp/sessions/` |
+| `muse_export_session` | tool | Export one session to Markdown / JSON / HTML |
+| `muse_project_profile` | tool | Per-project settings (default platform, default tags, language) |
+| `muse_git` | tool | `status / log / diff / branch / snapshot` + design-decision extraction from commit messages |
+| `muse_session_stats` | tool | Productivity dashboard: sessions/day, decisions/session, language breakdown |
+| `muse_auto_tag` | tool | AI tag suggestions for a session (Claude API, optional) |
+| `muse_template` | tool | Custom doc templates (per project / per output type) |
+| `muse_batch` | tool | Compose multiple tool calls sequentially or in parallel in one round-trip |
+| `vibe-coding://sessions/list` | resource | List of captured sessions (`@-mention`-able) |
+| `vibe-coding://sessions/{id}` | resource | One session's full body, code blocks, decisions, tags |
+| `vibe-coding://config` | resource | Current platform configuration (which integrations are wired) |
+| `prompt://vibe-coding/daily-vibe-log` | prompt | Roll today's captured sessions into one daily log |
+| `prompt://vibe-coding/document-session` | prompt | One session → dev document → publish |
+| `prompt://vibe-coding/refactor-context` | prompt | Session → PR description with decisions + AST + git diff |
+
+## How it works
+
+```
+                      Claude (or any MCP client)
+                                │
+       ┌────────────────────────┴────────────────────────┐
+       ▼                                                  ▼
+  src/index.ts (Streamable HTTP, POST /mcp at :3000)   src/stdio.ts (bin)
+       │                                                  │
+       └────────────────────────┬─────────────────────────┘
+                                ▼
+                  src/core/mcpServerFactory.ts
+                                │
+              ┌─────────────────┼─────────────────┐
+              ▼                 ▼                 ▼
+         toolRegistry.ts   resources.ts      prompts.ts
+         (15 muse_* tools) (3 resources)     (3 prompts)
+              │
               ▼
-       src/tools/*.ts (existing tool implementations)
-
-           ▲                                            ▲
-           │                                            │
-  src/index.ts (Streamable HTTP)            src/stdio.ts (stdio)
-  POST /mcp at :3000                        used by `vibe-coding-mcp` bin
+              src/tools/*.ts (15 tool implementations)
+                            │
+                            ▼
+              src/core/sessionStorage.ts (~/.vibe-coding-mcp/sessions/)
+              src/platforms/*.ts (notion / github-wiki / obsidian / ...)
 ```
 
-Key changes:
+Three design choices that matter:
+1. **Single registry, two transports.** HTTP and stdio both call `createMcpServer()` from `mcpServerFactory.ts`. There's no "stdio has feature X that HTTP doesn't" — the v2.13.0 drift is closed.
+2. **Sessions are local files.** `~/.vibe-coding-mcp/sessions/<id>.json` — no remote DB, no telemetry, you own the data. Trivial to back up, grep, or sync via Dropbox.
+3. **Publishing is per-platform, not one-size-fits-all.** Notion expects blocks, GitHub Wiki expects sidebar markdown, Obsidian expects frontmatter — `muse_normalize_for_platform` handles each one's quirks so `muse_publish_document` can stay a single tool.
 
-- **Single tool registry.** `src/core/toolRegistry.ts` is the only place that
-  enumerates the 15 `muse_*` tools. Adding a tool is a one-line edit.
-- **High-level `McpServer`.** Both entries call `createMcpServer()` from
-  `src/core/mcpServerFactory.ts`, which uses
-  `McpServer.registerTool() / .resource() / .prompt()` (SDK 1.25+ API).
-- **Streamable HTTP, not SSE.** `src/index.ts` exposes the MCP 2025-03-26
-  transport at `POST /mcp`. The old `/sse` route returns HTTP 410.
+## Configuration
 
-### Capabilities matrix
+| Env var | Required for | Default | Purpose |
+|---------|--------------|---------|---------|
+| `ANTHROPIC_API_KEY` | `muse_auto_tag`, AI summarization | — | Optional. Enables Claude-API-powered analysis |
+| `NOTION_API_KEY` + `NOTION_DATABASE_ID` | Notion publishing | — | Notion integration |
+| `GITHUB_TOKEN` + `GITHUB_REPO` | GitHub Wiki publishing | — | Wiki push uses git over HTTPS |
+| `CONFLUENCE_BASE_URL` + `CONFLUENCE_USERNAME` + `CONFLUENCE_API_TOKEN` | Confluence | — | Atlassian Cloud |
+| `SLACK_WEBHOOK_URL` | Slack | — | Webhook URL |
+| `DISCORD_WEBHOOK_URL` | Discord | — | Webhook URL |
+| `PORT` | HTTP mode only | `3000` | Streamable HTTP bind port |
 
-| Surface | Count | Lives in | Examples |
-|---------|-------|----------|----------|
-| **Tools** | 15 | `src/core/toolRegistry.ts` → `src/tools/*.ts` | `muse_collect_code_context`, `muse_publish_document`, `muse_git`, `muse_batch` |
-| **Resources** | 3 | `src/core/resources.ts` | `vibe-coding://sessions/list`, `vibe-coding://sessions/{id}`, `vibe-coding://config` |
-| **Prompts** | 3 | `src/core/prompts.ts` | `daily-vibe-log`, `document-session`, `refactor-context` |
+All env vars are optional. The MCP boots with zero env vars set — tools that require an integration return a structured `INTEGRATION_NOT_CONFIGURED` error instead of crashing.
 
-Auto-capture every Claude Code session into the session store: see
-[`docs/AUTO_CAPTURE.md`](./docs/AUTO_CAPTURE.md).
+## Known limitations
+
+- **Capture is hook-driven.** The MCP itself doesn't sniff your editor — it relies on Claude Code calling it (via the `PostToolUse` / `Stop` hooks shown in Quickstart). Without hooks, you have to call `muse_session_history` manually.
+- **No shared session store yet.** Sessions are local. Two laptops = two session histories. Cross-device sync is on the roadmap.
+- **AST analysis covers TS / Python / Go.** Rust, Swift, Kotlin, Ruby AST support is not in v2.x.
+- **Publishing is one-way.** We can write to Notion / Wiki / Obsidian etc. but we don't pull updates back into the session store.
+
+## When NOT to use this
+
+- If you want **automatic git commit messages**, use [aicommits](https://github.com/Nutlope/aicommits) or similar — vibe-coding-mcp generates *documents*, not commit messages.
+- If you want **team-wide knowledge base search across everyone's sessions**, this MCP is single-user/local. Build a Notion DB on top and search there, or wait for the shared-store roadmap item.
+- If you want a **manual journaling tool with rich editing**, use Obsidian / Notion directly — this MCP is for the auto-capture-then-publish flow, not for hand-writing notes.
+
+## Comparison
+
+| | vibe-coding-mcp | Manual journaling | `git log` | Notion ADR template |
+|---|---|---|---|---|
+| Captures *why* (decisions), not just *what* | yes | yes (if you do it) | no | yes (if you do it) |
+| Survives skipping a day | yes (hooks) | no | n/a | no |
+| Code-block + AST analysis | yes | no | no | no |
+| Auto-publishes to 6 platforms | yes | no | no | Notion only |
+| Local-first session store | yes (`~/.vibe-coding-mcp/`) | varies | local | cloud |
+| Per-platform Markdown quirks handled | yes | no | n/a | n/a |
+
+## Roadmap
+
+- **Shared session store.** Opt-in cross-device sync (S3 / Git / WebDAV) and team mode where multiple users can search each other's captured sessions.
+- **Auto-summary by topic.** Group sessions by topic across weeks ("everything I did on the auth refactor in Q2") instead of by day.
+- **Git commit-message integration.** Surface `muse_summarize_design_decisions` output as a prepare-commit-msg suggestion.
+- **Wider AST language support.** Rust + Swift + Kotlin AST + Mermaid diagrams.
+- **Resource for cross-session search.** `vibe-coding://search?q=...` so the LLM can `@-mention` "all sessions about caching" in one go.
+
+## Contributing
+
+PRs welcome. Adding a tool is now a single-file change in `src/tools/<name>.ts` + a one-line `register()` in `src/core/toolRegistry.ts`. CI runs `typecheck + build + test` on Node 20 against every PR.
+
+Quick contributor loop:
+
+```bash
+git clone https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp
+cd vibe-coding-mcp
+npm install
+npm run typecheck && npm test && npm run build
+```
 
 ## Security
 
-This package validates paths, sanitizes filenames, enforces HTTPS-only +
-allowlisted hosts for webhook URLs, and wraps outbound HTTP with a timeout +
-exponential-backoff retry — see [`src/core/security.ts`](./src/core/security.ts).
-The threat model, supported versions, and vulnerability reporting process are
-documented in [`SECURITY.md`](./SECURITY.md). The CI pipeline runs CodeQL with
-the `security-and-quality` query pack on every push and weekly.
+This package validates paths, sanitizes filenames, enforces HTTPS-only + allowlisted hosts for webhook URLs, and wraps outbound HTTP with a timeout + exponential-backoff retry — see [`src/core/security.ts`](./src/core/security.ts). The threat model, supported versions, and vulnerability reporting process are in [`SECURITY.md`](./SECURITY.md). CodeQL with the `security-and-quality` query pack runs on every push and weekly.
 
-## Links
-
-- [npm Package](https://www.npmjs.com/package/vibe-coding-mcp)
-- [GitHub Repository](https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp)
-- [MCP Registry](https://registry.modelcontextprotocol.io)
+**Report vulnerabilities privately** via a GitHub Security Advisory: <https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/security/advisories/new>.
 
 ## License
 
-MIT
+MIT — SPDX identifier declared in [`package.json`](./package.json) (a top-level `LICENSE` file will be added in the next release).
 
-## Author
+## Maintainer
 
-**MUSE-CODE-SPACE** - [GitHub](https://github.com/MUSE-CODE-SPACE)
+[@yoon-k](https://github.com/MUSE-CODE-SPACE) (MUSE-CODE-SPACE). Issues + support: <https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/issues>.
+
+---
+
+<a name="한국어"></a>
+## 한국어 요약
+
+vibe-coding-mcp는 Claude(또는 다른 MCP 클라이언트)와 함께 **AI 페어 코딩 세션을 자동으로 문서화**해 주는 MCP 서버입니다. Claude Code의 `PostToolUse` + `Stop` 훅에 연결하면 매 세션이 `~/.vibe-coding-mcp/sessions/` 에 자동 저장되고, **15개 도구**가 거기서 **README / DESIGN / API / ARCHITECTURE / CHANGELOG / TUTORIAL** 6종 문서를 생성한 뒤 **Notion / GitHub Wiki / Obsidian / Confluence / Slack / Discord** 6개 플랫폼에 발행합니다.
+
+v2.14.0(2026-05-20)에서 HTTP/stdio 두 진입점이 **단일 레지스트리** 를 공유하도록 통합되었고, `@-mention` 가능한 **MCP Resources 3개**(`sessions/list`, `sessions/{id}`, `config`)와 **Prompts 3개**(`daily-vibe-log`, `document-session`, `refactor-context`)가 추가되었습니다.
+
+설치 + 자동 캡처 훅 설정은 [`docs/AUTO_CAPTURE.md`](./docs/AUTO_CAPTURE.md) 참고. 변경 이력은 [`CHANGELOG.md`](./CHANGELOG.md), 위협 모델은 [`SECURITY.md`](./SECURITY.md).
