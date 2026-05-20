@@ -1,6 +1,6 @@
 {
   "name": "vibe-coding-mcp",
-  "version": "2.12.1",
+  "version": "2.13.0",
   "mcpName": "io.github.MUSE-CODE-SPACE/vibe-coding",
   "description": "MCP server for automatically collecting, summarizing, documenting, and publishing vibe coding sessions",
   "main": "dist/index.js",
@@ -9,14 +9,20 @@
     "vibe-coding-mcp": "dist/stdio.js"
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/**/*.js.map",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "stdio": "node dist/stdio.js",
     "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathIgnorePatterns='integration'",
     "test:tools": "node scripts/test-tools.mjs",
@@ -47,7 +53,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.25.0",
     "@notionhq/client": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.0",

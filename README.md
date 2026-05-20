@@ -253,6 +253,30 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
+## Architecture notes (current state, Phase 1 baseline)
+
+> The repository currently ships **two entry points** that have drifted apart:
+>
+> - `src/index.ts` — SSE (HTTP) transport, exposes **7 tools**.
+> - `src/stdio.ts` — stdio transport (used by `bin: vibe-coding-mcp`), exposes
+>   **15 tools**.
+>
+> Both share the same tool implementations under `src/tools/`, but their
+> registries are wired by hand and have diverged. Full unification onto a
+> single transport-agnostic `McpServer` (along with MCP `prompts` and
+> `resources` support) is planned for Phase 3 and tracked in
+> [`CHANGELOG.md`](./CHANGELOG.md). For now, **prefer the stdio entry
+> point** (`vibe-coding-mcp` binary) for full tool coverage.
+
+## Security
+
+This package validates paths, sanitizes filenames, enforces HTTPS-only +
+allowlisted hosts for webhook URLs, and wraps outbound HTTP with a timeout +
+exponential-backoff retry — see [`src/core/security.ts`](./src/core/security.ts).
+The threat model, supported versions, and vulnerability reporting process are
+documented in [`SECURITY.md`](./SECURITY.md). The CI pipeline runs CodeQL with
+the `security-and-quality` query pack on every push and weekly.
+
 ## Links
 
 - [npm Package](https://www.npmjs.com/package/vibe-coding-mcp)
