@@ -13,9 +13,9 @@ import {
 } from '../core/toolRegistry.js';
 
 describe('toolRegistry', () => {
-  it('exposes exactly 15 tools', () => {
-    expect(TOOL_REGISTRY).toHaveLength(15);
-    expect(getToolNames()).toHaveLength(15);
+  it('exposes exactly 17 tools', () => {
+    expect(TOOL_REGISTRY).toHaveLength(17);
+    expect(getToolNames()).toHaveLength(17);
   });
 
   it('includes every muse_* tool the stdio entry point used to expose', () => {
@@ -36,6 +36,8 @@ describe('toolRegistry', () => {
       'muse_auto_tag',
       'muse_template',
       'muse_batch',
+      'muse_capture_transcript',
+      'muse_digest',
     ];
     for (const name of expected) {
       expect(names).toContain(name);

@@ -1,12 +1,12 @@
 /**
- * Shared tool registry — single source of truth for all 15 MCP tools.
+ * Shared tool registry — single source of truth for all 17 MCP tools.
  *
  * Both entry points (`src/index.ts` HTTP transport and `src/stdio.ts` stdio
  * transport) import from this module so they expose an identical capability
  * surface. Adding/removing a tool is a single-line change here.
  */
 import { createErrorResponse, ToolError } from './errors.js';
-import { validateInput, CollectCodeContextSchema, SummarizeDesignDecisionsSchema, GenerateDevDocumentSchema, NormalizeForPlatformSchema, PublishDocumentSchema, CreateSessionLogSchema, AnalyzeCodeSchema, SessionHistorySchema, ExportSessionSchema, ProjectProfileSchema, GitSchema, SessionStatsSchema, AutoTagSchema, TemplateSchema, BatchSchema, } from './schemas.js';
+import { validateInput, CollectCodeContextSchema, SummarizeDesignDecisionsSchema, GenerateDevDocumentSchema, NormalizeForPlatformSchema, PublishDocumentSchema, CreateSessionLogSchema, AnalyzeCodeSchema, SessionHistorySchema, ExportSessionSchema, ProjectProfileSchema, GitSchema, SessionStatsSchema, AutoTagSchema, TemplateSchema, BatchSchema, CaptureTranscriptSchema, DigestSchema, } from './schemas.js';
 // Tool implementations
 import { collectCodeContext, collectCodeContextSchema } from '../tools/collectCodeContext.js';
 import { summarizeDesignDecisions, summarizeDesignDecisionsSchema, } from '../tools/summarizeDesignDecisions.js';
@@ -23,8 +23,10 @@ import { sessionStatsTool, sessionStatsSchema } from '../tools/sessionStats.js';
 import { autoTagTool, autoTagSchema } from '../tools/autoTag.js';
 import { templateTool, templateSchema } from '../tools/template.js';
 import { batchTool, batchSchema } from '../tools/batch.js';
+import { captureTranscriptTool, captureTranscriptSchema } from '../tools/captureTranscript.js';
+import { digestTool, digestSchema } from '../tools/digest.js';
 /**
- * All 15 tools, in display order. Edit this array to add/remove/reorder
+ * All 17 tools, in display order. Edit this array to add/remove/reorder
  * capabilities. The order here is the order clients see in `tools/list`.
  */
 export const TOOL_REGISTRY = [
@@ -146,6 +148,22 @@ export const TOOL_REGISTRY = [
         handler: async (args) => {
             const validated = validateInput(BatchSchema, args);
             return batchTool(validated);
+        },
+    },
+    {
+        descriptor: captureTranscriptSchema,
+        inputZodSchema: CaptureTranscriptSchema,
+        handler: async (args) => {
+            const validated = validateInput(CaptureTranscriptSchema, args);
+            return captureTranscriptTool(validated);
+        },
+    },
+    {
+        descriptor: digestSchema,
+        inputZodSchema: DigestSchema,
+        handler: async (args) => {
+            const validated = validateInput(DigestSchema, args);
+            return digestTool(validated);
         },
     },
 ];

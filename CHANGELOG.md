@@ -7,8 +7,37 @@ All notable changes to `vibe-coding-mcp` are documented here. Format follows [Ke
 - Shared session store (opt-in S3 / Git / WebDAV sync; team mode).
 - Auto-summary by topic across weeks instead of by day.
 - Wider AST language support (Rust / Swift / Kotlin) + diagrams.
-- `vibe-coding://search?q=...` resource for cross-session search.
 - Git `prepare-commit-msg` integration surfacing decision summaries.
+- Capture for Cursor / Codex CLI transcripts (today: Claude Code only).
+
+## [2.15.0] - 2026-10-13
+
+### Highlights ⭐
+- **Auto-capture actually works now.** The v2.14 hook recipe shelled out to `claude mcp call`, a command that does not exist in Claude Code, so nothing was ever captured. v2.15 replaces it with a real hook binary: `vibe-coding-mcp hook` reads Claude Code's hook JSON on stdin, parses the session transcript (`~/.claude/projects/**/*.jsonl`) and upserts a session — prompts, files written/edited with code, shell commands, duration, branch, and pattern-extracted design decisions. No API key, no stdout noise, exit 0 always.
+- **`npx vibe-coding-mcp init`** installs `Stop` + `SessionEnd` hooks into `~/.claude/settings.json` (merging, with backup). **`doctor`** tells you whether capture is running. **`capture --all`** backfills every past session of a project.
+- **`muse_digest`** turns captured sessions into a standup / weekly report / monthly retro (totals, highlights, grouped by day · project · tag, most-touched files), in English or Korean.
+- **Agent Skill shipped** in `skills/vibe-coding/` (SKILL.md + references + setup script), packable with `npm run skill:pack` for Agensi / Claude Code / Cursor / Codex.
+
+### Added
+- `src/cli.ts` — new bin entry (`vibe-coding-mcp`) with subcommands `init`, `doctor`, `capture`, `hook`; no subcommand starts the stdio MCP server as before.
+- `src/core/transcriptParser.ts` — Claude Code JSONL parser (user prompts, assistant text, `Write`/`Edit`/`MultiEdit`/`NotebookEdit` file changes with snippets, `Bash` commands, tool counts, timing, `ai-title`; skips sub-agent side-chains and system reminders; collapses pasted blocks).
+- `src/core/captureEngine.ts` — transcript → session mapping, idempotent per `metadata.claudeSessionId`, preserves user-added tags on update.
+- `src/core/hookInstaller.ts` — pure merge/remove of hook groups + settings IO with backups.
+- Tool `muse_capture_transcript` (`capture` | `preview` | `list`, `all`, `transcriptPath`, `cwd`, `tags`).
+- Tool `muse_digest` (`today` | `yesterday` | `week` | `last-week` | `month` | `custom`, `groupBy`, `language`, `includePrompts`, filters).
+- Resources `vibe-coding://sessions/today` and `vibe-coding://search/{query}` (matches touched file paths too).
+- Prompts `/standup` and `/weekly-report`.
+- `skills/vibe-coding/` skill package and `scripts/pack-skill.mjs`.
+- +49 tests (183 → 232): transcript parser, capture engine, digest, resources, hook installer.
+
+### Changed
+- `bin` now points at `dist/cli.js`; `dist/stdio.js` still runs standalone.
+- Logger writes every level to **stderr**. On the stdio transport stdout is the JSON-RPC channel, so `info` lines on stdout could corrupt the protocol.
+- Tool count 15 → 17, resources 3 → 5, prompts 3 → 5 on both transports.
+- README quickstart and `docs/AUTO_CAPTURE.md` rewritten around `init` / `doctor`.
+
+### Fixed
+- Auto-capture hook recipe referenced a non-existent `claude mcp call` command (README + docs since v2.14.0).
 
 ## [2.14.0] - 2026-05-20
 
@@ -69,6 +98,7 @@ All notable changes to `vibe-coding-mcp` are documented here. Format follows [Ke
 - AI-powered summarization with Claude API.
 - See git history for earlier releases.
 
-[Unreleased]: https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/compare/v2.14.0...HEAD
+[Unreleased]: https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/compare/v2.15.0...HEAD
+[2.15.0]: https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/compare/v2.14.0...v2.15.0
 [2.14.0]: https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/compare/v2.12.1...v2.13.0

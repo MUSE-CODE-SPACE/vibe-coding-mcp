@@ -7,6 +7,8 @@
  *   - `vibe-coding://sessions/list`        — list of captured sessions
  *   - `vibe-coding://sessions/{id}`        — full detail for one session (template)
  *   - `vibe-coding://config`               — current platform configuration
+ *   - `vibe-coding://sessions/today`       — sessions captured today (v2.15)
+ *   - `vibe-coding://search/{query}`       — keyword search across sessions (v2.15, template)
  */
 export interface ResourceContent {
     uri: string;
@@ -32,9 +34,18 @@ export declare const RESOURCE_TEMPLATE_DESCRIPTORS: readonly [{
     readonly name: "session-detail";
     readonly description: "Full read-only detail of one captured session (code contexts, design decisions, metadata).";
     readonly mimeType: "application/json";
+}, {
+    readonly uriTemplate: "vibe-coding://search/{query}";
+    readonly name: "session-search";
+    readonly description: "Keyword search across session titles, summaries, tags and touched file paths. Example: vibe-coding://search/auth%20refactor";
+    readonly mimeType: "application/json";
 }];
 /** Read the `sessions/list` resource. */
 export declare function readSessionsList(uri: string): Promise<ResourceContent>;
+/** Read the `sessions/today` resource. */
+export declare function readSessionsToday(uri: string): Promise<ResourceContent>;
+/** Read a `search/{query}` resource. */
+export declare function readSearch(uri: string, rawQuery: string): Promise<ResourceContent>;
 /** Read a `sessions/{id}` resource. */
 export declare function readSessionDetail(uri: string, sessionId: string): Promise<ResourceContent>;
 /** Read the `config` resource. */

@@ -35,16 +35,9 @@ class Logger {
             };
         }
         const formatted = this.formatEntry(entry);
-        switch (level) {
-            case 'error':
-                console.error(formatted);
-                break;
-            case 'warn':
-                console.warn(formatted);
-                break;
-            default:
-                console.log(formatted);
-        }
+        // Always stderr: on the stdio transport stdout *is* the JSON-RPC channel,
+        // and Claude Code parses hook stdout. Logs must never land there.
+        console.error(formatted);
     }
     debug(message, context) {
         this.log('debug', message, context);

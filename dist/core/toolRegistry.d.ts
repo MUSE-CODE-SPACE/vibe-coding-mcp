@@ -1,5 +1,5 @@
 /**
- * Shared tool registry — single source of truth for all 15 MCP tools.
+ * Shared tool registry — single source of truth for all 17 MCP tools.
  *
  * Both entry points (`src/index.ts` HTTP transport and `src/stdio.ts` stdio
  * transport) import from this module so they expose an identical capability
@@ -29,7 +29,7 @@ export interface RegisteredTool {
     handler: (args: unknown) => unknown | Promise<unknown>;
 }
 /**
- * All 15 tools, in display order. Edit this array to add/remove/reorder
+ * All 17 tools, in display order. Edit this array to add/remove/reorder
  * capabilities. The order here is the order clients see in `tools/list`.
  */
 export declare const TOOL_REGISTRY: readonly RegisteredTool[];

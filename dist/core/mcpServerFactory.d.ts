@@ -2,7 +2,7 @@
  * MCP server factory — builds a fully-wired `McpServer` instance using the
  * high-level `@modelcontextprotocol/sdk` API. Used by both entry points
  * (`src/index.ts` and `src/stdio.ts`) so they expose an identical surface:
- * 15 tools, 3 resources (one of which is a template), 3 prompts.
+ * 17 tools, 5 resources (two of which are templates), 5 prompts.
  *
  * High-level vs low-level: previously both entry points constructed a
  * low-level `Server` and registered request handlers for
@@ -13,9 +13,9 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 declare const SERVER_NAME = "vibe-coding-mcp";
-declare const SERVER_VERSION = "2.14.0";
+declare const SERVER_VERSION = "2.15.0";
 /**
- * Build a new `McpServer` instance populated with all 15 tools, the resource
+ * Build a new `McpServer` instance populated with all 17 tools, the resource
  * set, and the prompt set. The returned server is not yet connected to a
  * transport — caller is responsible for `server.connect(transport)`.
  */

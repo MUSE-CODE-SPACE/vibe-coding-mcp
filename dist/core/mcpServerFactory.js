@@ -2,7 +2,7 @@
  * MCP server factory — builds a fully-wired `McpServer` instance using the
  * high-level `@modelcontextprotocol/sdk` API. Used by both entry points
  * (`src/index.ts` and `src/stdio.ts`) so they expose an identical surface:
- * 15 tools, 3 resources (one of which is a template), 3 prompts.
+ * 17 tools, 5 resources (two of which are templates), 5 prompts.
  *
  * High-level vs low-level: previously both entry points constructed a
  * low-level `Server` and registered request handlers for
@@ -15,13 +15,13 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { z } from 'zod';
 import { TOOL_REGISTRY } from './toolRegistry.js';
 import { createErrorResponse, ToolError } from './errors.js';
-import { STATIC_RESOURCE_DESCRIPTORS, readSessionsList, readSessionDetail, readConfig, } from './resources.js';
+import { STATIC_RESOURCE_DESCRIPTORS, readSessionsList, readSessionDetail, readConfig, readSessionsToday, readSearch, } from './resources.js';
 import { PROMPT_DESCRIPTORS, findPrompt } from './prompts.js';
 import { listSessions } from './sessionStorage.js';
 const SERVER_NAME = 'vibe-coding-mcp';
-const SERVER_VERSION = '2.14.0';
+const SERVER_VERSION = '2.15.0';
 /**
- * Build a new `McpServer` instance populated with all 15 tools, the resource
+ * Build a new `McpServer` instance populated with all 17 tools, the resource
  * set, and the prompt set. The returned server is not yet connected to a
  * transport — caller is responsible for `server.connect(transport)`.
  */
@@ -38,7 +38,7 @@ export function createMcpServer() {
     registerPrompts(server);
     return server;
 }
-/** Wire all 15 tools from the shared registry. */
+/** Wire all 17 tools from the shared registry. */
 function registerTools(server) {
     for (const tool of TOOL_REGISTRY) {
         const { name, description } = tool.descriptor;
@@ -69,8 +69,13 @@ function registerResources(server) {
         const content = await readSessionsList(uri.toString());
         return { contents: [content] };
     });
+    // Static: sessions/today
+    server.resource('sessions-today', 'vibe-coding://sessions/today', { description: STATIC_RESOURCE_DESCRIPTORS[1].description, mimeType: 'application/json' }, async (uri) => {
+        const content = await readSessionsToday(uri.toString());
+        return { contents: [content] };
+    });
     // Static: config
-    server.resource('config', 'vibe-coding://config', { description: STATIC_RESOURCE_DESCRIPTORS[1].description, mimeType: 'application/json' }, async (uri) => {
+    server.resource('config', 'vibe-coding://config', { description: STATIC_RESOURCE_DESCRIPTORS[2].description, mimeType: 'application/json' }, async (uri) => {
         const content = readConfig(uri.toString());
         return { contents: [content] };
     });
@@ -97,6 +102,15 @@ function registerResources(server) {
     }, async (uri, variables) => {
         const id = Array.isArray(variables.id) ? variables.id[0] : variables.id;
         const content = await readSessionDetail(uri.toString(), id ?? '');
+        return { contents: [content] };
+    });
+    // Template: search/{query}
+    server.resource('session-search', new ResourceTemplate('vibe-coding://search/{query}', { list: undefined }), {
+        description: 'Keyword search across session titles, summaries, tags and touched file paths.',
+        mimeType: 'application/json',
+    }, async (uri, variables) => {
+        const q = Array.isArray(variables.query) ? variables.query[0] : variables.query;
+        const content = await readSearch(uri.toString(), q ?? '');
         return { contents: [content] };
     });
 }
@@ -127,8 +141,8 @@ function registerPrompts(server) {
 export function getCapabilityCounts() {
     return {
         tools: TOOL_REGISTRY.length,
-        // 2 static + 1 template = 3 logical resources
-        resources: STATIC_RESOURCE_DESCRIPTORS.length + 1,
+        // 3 static + 2 templates = 5 logical resources
+        resources: STATIC_RESOURCE_DESCRIPTORS.length + 2,
         prompts: PROMPT_DESCRIPTORS.length,
     };
 }

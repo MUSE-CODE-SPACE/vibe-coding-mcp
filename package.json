@@ -1,12 +1,12 @@
 {
   "name": "vibe-coding-mcp",
-  "version": "2.14.0",
+  "version": "2.15.0",
   "mcpName": "io.github.MUSE-CODE-SPACE/vibe-coding",
-  "description": "MCP server for automatically collecting, summarizing, documenting, and publishing vibe coding sessions",
+  "description": "Auto-capture Claude Code sessions from their transcripts (hook + CLI), then summarize, digest, document, and publish them — MCP server + agent skill",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "vibe-coding-mcp": "dist/stdio.js"
+    "vibe-coding-mcp": "dist/cli.js"
   },
   "files": [
     "dist/**/*.js",
@@ -15,7 +15,8 @@
     "README.md",
     "LICENSE",
     "SECURITY.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "skills/**"
   ],
   "scripts": {
     "build": "tsc",
@@ -26,6 +27,7 @@
     "prepublishOnly": "npm run build",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathIgnorePatterns='integration'",
     "test:tools": "node scripts/test-tools.mjs",
+    "skill:pack": "node scripts/pack-skill.mjs",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
@@ -37,6 +39,10 @@
     "obsidian",
     "github-wiki",
     "claude",
+    "claude-code",
+    "claude-code-hooks",
+    "agent-skills",
+    "skill",
     "ai-coding",
     "model-context-protocol",
     "git"

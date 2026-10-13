@@ -25,7 +25,7 @@ describe('createMcpServer', () => {
 
 describe('getCapabilityCounts', () => {
   it('reports 15 tools', () => {
-    expect(getCapabilityCounts().tools).toBe(15);
+    expect(getCapabilityCounts().tools).toBe(17);
   });
 
   it('reports at least 3 resources (2 static + 1 template)', () => {

@@ -144,6 +144,80 @@ const PROMPTS = [
             };
         },
     },
+    {
+        descriptor: {
+            name: 'weekly-report',
+            description: 'Turn this week\'s (or last week\'s) captured Claude Code sessions into a weekly report: what shipped, decisions made, files touched, per project — ready to paste into Slack / Notion / a 1:1 doc.',
+            arguments: [
+                { name: 'period', description: '`week` (default), `last-week`, `month`, or `custom`.', required: false },
+                { name: 'since', description: 'ISO date start for custom period.', required: false },
+                { name: 'until', description: 'ISO date end (exclusive) for custom period.', required: false },
+                { name: 'groupBy', description: '`project` (default), `day`, or `tag`.', required: false },
+                { name: 'language', description: '`en` (default) or `ko`.', required: false },
+                { name: 'platform', description: 'Optional publish target: notion, github-wiki, obsidian, confluence, slack, discord.', required: false },
+            ],
+        },
+        build: (args) => {
+            const period = args.period || 'week';
+            const groupBy = args.groupBy || 'project';
+            const language = (args.language || 'en').toLowerCase() === 'ko' ? 'ko' : 'en';
+            const custom = period === 'custom' ? `, since="${args.since ?? ''}", until="${args.until ?? ''}"` : '';
+            return {
+                description: `Weekly report (${period}, by ${groupBy}, ${language}).`,
+                messages: [
+                    {
+                        role: 'user',
+                        content: {
+                            type: 'text',
+                            text: [
+                                `Write my ${period === 'month' ? 'monthly' : 'weekly'} engineering report from captured sessions.`,
+                                '',
+                                'Workflow:',
+                                `1. Call \`muse_digest\` with period="${period}"${custom}, groupBy="${groupBy}", language="${language}", includePrompts=true.`,
+                                '2. If totals.sessions is 0, tell the user to run `npx vibe-coding-mcp init` (installs the Claude Code capture hook) or `muse_capture_transcript` with all=true to backfill, then stop.',
+                                '3. Rewrite the digest\'s Markdown into a report with sections: **Shipped** (concrete outcomes per project, from session titles + files), **Decisions** (from highlights, keep rationale), **In progress / blocked**, **Next week**. Keep file paths in backticks. Do not invent work that is not in the digest.',
+                                args.platform
+                                    ? `4. Call \`muse_normalize_for_platform\` with platform="${args.platform}" then \`muse_publish_document\` with title "Weekly report <since> → <until>".`
+                                    : '4. Return the report to the user and offer to publish it (Notion / Obsidian / Slack …) via `muse_publish_document`.',
+                            ].join('\n'),
+                        },
+                    },
+                ],
+            };
+        },
+    },
+    {
+        descriptor: {
+            name: 'standup',
+            description: 'Three-line daily standup (yesterday / today / blockers) generated from yesterday\'s and today\'s captured sessions.',
+            arguments: [
+                { name: 'language', description: '`en` (default) or `ko`.', required: false },
+            ],
+        },
+        build: (args) => {
+            const language = (args.language || 'en').toLowerCase() === 'ko' ? 'ko' : 'en';
+            return {
+                description: `Daily standup (${language}).`,
+                messages: [
+                    {
+                        role: 'user',
+                        content: {
+                            type: 'text',
+                            text: [
+                                'Write my daily standup from captured sessions.',
+                                '',
+                                'Workflow:',
+                                `1. Call \`muse_digest\` with period="yesterday", groupBy="project", language="${language}", includePrompts=true.`,
+                                `2. Call \`muse_digest\` with period="today", groupBy="project", language="${language}", includePrompts=true.`,
+                                '3. Call `muse_git` action="status" for the current repo to spot uncommitted work.',
+                                `4. Output exactly three short bullet groups in ${language === 'ko' ? 'Korean' : 'English'}: **Yesterday** (from step 1), **Today** (from step 2 + uncommitted work), **Blockers** (anything in the sessions that reads like a failure, revert, or open question; write "none" if nothing). Max 3 bullets per group, no preamble.`,
+                            ].join('\n'),
+                        },
+                    },
+                ],
+            };
+        },
+    },
 ];
 export const PROMPT_DESCRIPTORS = PROMPTS.map((p) => p.descriptor);
 export function findPrompt(name) {

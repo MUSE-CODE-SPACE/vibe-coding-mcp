@@ -1,5 +1,5 @@
 /**
- * Shared tool registry — single source of truth for all 15 MCP tools.
+ * Shared tool registry — single source of truth for all 17 MCP tools.
  *
  * Both entry points (`src/index.ts` HTTP transport and `src/stdio.ts` stdio
  * transport) import from this module so they expose an identical capability
@@ -26,6 +26,8 @@ import {
   AutoTagSchema,
   TemplateSchema,
   BatchSchema,
+  CaptureTranscriptSchema,
+  DigestSchema,
 } from './schemas.js';
 
 // Tool implementations
@@ -47,6 +49,8 @@ import { sessionStatsTool, sessionStatsSchema } from '../tools/sessionStats.js';
 import { autoTagTool, autoTagSchema } from '../tools/autoTag.js';
 import { templateTool, templateSchema } from '../tools/template.js';
 import { batchTool, batchSchema } from '../tools/batch.js';
+import { captureTranscriptTool, captureTranscriptSchema } from '../tools/captureTranscript.js';
+import { digestTool, digestSchema } from '../tools/digest.js';
 
 /**
  * MCP-style tool definition object (the JSON-schema descriptor that ships
@@ -73,7 +77,7 @@ export interface RegisteredTool {
 }
 
 /**
- * All 15 tools, in display order. Edit this array to add/remove/reorder
+ * All 17 tools, in display order. Edit this array to add/remove/reorder
  * capabilities. The order here is the order clients see in `tools/list`.
  */
 export const TOOL_REGISTRY: readonly RegisteredTool[] = [
@@ -195,6 +199,22 @@ export const TOOL_REGISTRY: readonly RegisteredTool[] = [
     handler: async (args) => {
       const validated = validateInput(BatchSchema, args);
       return batchTool(validated as Parameters<typeof batchTool>[0]);
+    },
+  },
+  {
+    descriptor: captureTranscriptSchema as ToolDescriptor,
+    inputZodSchema: CaptureTranscriptSchema,
+    handler: async (args) => {
+      const validated = validateInput(CaptureTranscriptSchema, args);
+      return captureTranscriptTool(validated as Parameters<typeof captureTranscriptTool>[0]);
+    },
+  },
+  {
+    descriptor: digestSchema as ToolDescriptor,
+    inputZodSchema: DigestSchema,
+    handler: async (args) => {
+      const validated = validateInput(DigestSchema, args);
+      return digestTool(validated as Parameters<typeof digestTool>[0]);
     },
   },
 ] as const;

@@ -390,6 +390,36 @@ export const GitSchema = z.object({
   snapshotType: z.enum(['minimal', 'full']).optional().default('minimal')
 });
 
+// Transcript capture (v2.15)
+export const CaptureTranscriptSchema = z.object({
+  action: z.enum(['capture', 'preview', 'list']).optional().default('capture'),
+  transcriptPath: z.string().optional(),
+  cwd: z.string().optional(),
+  all: z.boolean().optional(),
+  limit: z.number().min(1).max(500).optional(),
+  minPrompts: z.number().min(0).optional(),
+  maxFiles: z.number().min(1).max(500).optional(),
+  maxDecisions: z.number().min(0).max(50).optional(),
+  tags: z.array(z.string()).optional()
+});
+
+// Digest / report (v2.15)
+export const DigestSchema = z.object({
+  period: z.enum(['today', 'yesterday', 'week', 'last-week', 'month', 'custom']).optional(),
+  since: z.string().optional(),
+  until: z.string().optional(),
+  groupBy: z.enum(['day', 'project', 'tag', 'none']).optional(),
+  language: z.enum(['en', 'ko']).optional(),
+  format: z.enum(['markdown', 'json']).optional(),
+  tags: z.array(z.string()).optional(),
+  project: z.string().optional(),
+  includeFiles: z.boolean().optional(),
+  includeDecisions: z.boolean().optional(),
+  includePrompts: z.boolean().optional(),
+  maxSessions: z.number().min(1).max(10000).optional(),
+  title: z.string().optional()
+});
+
 // Type exports from schemas
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;

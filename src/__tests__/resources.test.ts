@@ -45,9 +45,9 @@ afterAll(async () => {
 });
 
 describe('resources descriptors', () => {
-  it('exposes 2 static resources + 1 template (3 logical resources)', () => {
-    expect(STATIC_RESOURCE_DESCRIPTORS).toHaveLength(2);
-    expect(RESOURCE_TEMPLATE_DESCRIPTORS).toHaveLength(1);
+  it('exposes 3 static resources + 2 templates (5 logical resources)', () => {
+    expect(STATIC_RESOURCE_DESCRIPTORS).toHaveLength(3);
+    expect(RESOURCE_TEMPLATE_DESCRIPTORS).toHaveLength(2);
   });
 
   it('every static descriptor has uri, name, mimeType', () => {

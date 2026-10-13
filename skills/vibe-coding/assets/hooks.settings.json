@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "vibe-coding-mcp": {
+      "command": "npx",
+      "args": ["-y", "vibe-coding-mcp"]
+    }
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y vibe-coding-mcp hook",
+            "timeout": 60,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y vibe-coding-mcp hook",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

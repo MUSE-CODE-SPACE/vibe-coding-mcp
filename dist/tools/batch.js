@@ -18,6 +18,8 @@ import { gitTool } from './git.js';
 import { sessionStatsTool } from './sessionStats.js';
 import { autoTagTool } from './autoTag.js';
 import { templateTool } from './template.js';
+import { captureTranscriptTool } from './captureTranscript.js';
+import { digestTool } from './digest.js';
 const logger = createToolLogger('batch');
 // In-memory job storage
 const jobHistory = new Map();
@@ -39,6 +41,8 @@ const toolRegistry = {
     muse_session_stats: sessionStatsTool,
     muse_auto_tag: autoTagTool,
     muse_template: templateTool,
+    muse_capture_transcript: captureTranscriptTool,
+    muse_digest: digestTool,
 };
 // Helper functions
 function generateJobId() {

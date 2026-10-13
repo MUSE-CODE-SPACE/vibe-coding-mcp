@@ -9,15 +9,15 @@ export declare const CodeBlockSchema: z.ZodObject<{
     filename: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    code: string;
     language: string;
-    filename?: string | undefined;
+    code: string;
     description?: string | undefined;
+    filename?: string | undefined;
 }, {
     code: string;
+    description?: string | undefined;
     language?: string | undefined;
     filename?: string | undefined;
-    description?: string | undefined;
 }>;
 export declare const DesignDecisionSchema: z.ZodObject<{
     id: z.ZodString;
@@ -28,21 +28,21 @@ export declare const DesignDecisionSchema: z.ZodObject<{
     category: z.ZodDefault<z.ZodEnum<["architecture", "library", "pattern", "implementation", "other"]>>;
     timestamp: z.ZodDefault<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    timestamp: string;
     description: string;
     id: string;
     title: string;
+    category: "architecture" | "implementation" | "library" | "pattern" | "other";
+    timestamp: string;
     rationale: string;
-    category: "architecture" | "library" | "pattern" | "implementation" | "other";
     alternatives?: string[] | undefined;
 }, {
     description: string;
     id: string;
     title: string;
     rationale: string;
+    category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
     timestamp?: string | undefined;
     alternatives?: string[] | undefined;
-    category?: "architecture" | "library" | "pattern" | "implementation" | "other" | undefined;
 }>;
 export declare const CodeContextSchema: z.ZodObject<{
     sessionId: z.ZodString;
@@ -53,37 +53,37 @@ export declare const CodeContextSchema: z.ZodObject<{
         filename: z.ZodOptional<z.ZodString>;
         description: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        code: string;
         language: string;
-        filename?: string | undefined;
+        code: string;
         description?: string | undefined;
+        filename?: string | undefined;
     }, {
         code: string;
+        description?: string | undefined;
         language?: string | undefined;
         filename?: string | undefined;
-        description?: string | undefined;
     }>, "many">;
     conversationSummary: z.ZodString;
     tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    timestamp: string;
     sessionId: string;
+    timestamp: string;
     codeBlocks: {
-        code: string;
         language: string;
-        filename?: string | undefined;
+        code: string;
         description?: string | undefined;
+        filename?: string | undefined;
     }[];
     conversationSummary: string;
     tags?: string[] | undefined;
 }, {
-    timestamp: string;
     sessionId: string;
+    timestamp: string;
     codeBlocks: {
         code: string;
+        description?: string | undefined;
         language?: string | undefined;
         filename?: string | undefined;
-        description?: string | undefined;
     }[];
     conversationSummary: string;
     tags?: string[] | undefined;
@@ -108,15 +108,15 @@ export declare const CollectCodeContextSchema: z.ZodObject<{
         filename: z.ZodOptional<z.ZodString>;
         description: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        code: string;
         language: string;
-        filename?: string | undefined;
+        code: string;
         description?: string | undefined;
+        filename?: string | undefined;
     }, {
         code: string;
+        description?: string | undefined;
         language?: string | undefined;
         filename?: string | undefined;
-        description?: string | undefined;
     }>, "many">>;
     rawText: z.ZodOptional<z.ZodString>;
     conversationSummary: z.ZodString;
@@ -129,23 +129,23 @@ export declare const CollectCodeContextSchema: z.ZodObject<{
     autoDetectLanguage: boolean;
     removeDuplicates: boolean;
     includeStats: boolean;
-    codeBlocks?: {
-        code: string;
-        language: string;
-        filename?: string | undefined;
-        description?: string | undefined;
-    }[] | undefined;
     tags?: string[] | undefined;
+    codeBlocks?: {
+        language: string;
+        code: string;
+        description?: string | undefined;
+        filename?: string | undefined;
+    }[] | undefined;
     rawText?: string | undefined;
 }, {
     conversationSummary: string;
+    tags?: string[] | undefined;
     codeBlocks?: {
         code: string;
+        description?: string | undefined;
         language?: string | undefined;
         filename?: string | undefined;
-        description?: string | undefined;
     }[] | undefined;
-    tags?: string[] | undefined;
     rawText?: string | undefined;
     autoDetectLanguage?: boolean | undefined;
     removeDuplicates?: boolean | undefined;
@@ -160,20 +160,20 @@ export declare const SummarizeDesignDecisionsSchema: z.ZodObject<{
     maxDecisions: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     useAI: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
-    language: "en" | "ko" | "auto";
+    language: "ko" | "en" | "auto";
+    maxDecisions: number;
     conversationLog: string;
     includeImportanceScore: boolean;
     extractRelatedCode: boolean;
-    maxDecisions: number;
     useAI: boolean;
     projectContext?: string | undefined;
 }, {
     conversationLog: string;
-    language?: "en" | "ko" | "auto" | undefined;
     projectContext?: string | undefined;
+    language?: "ko" | "en" | "auto" | undefined;
+    maxDecisions?: number | undefined;
     includeImportanceScore?: boolean | undefined;
     extractRelatedCode?: boolean | undefined;
-    maxDecisions?: number | undefined;
     useAI?: boolean | undefined;
 }>;
 export declare const GenerateDevDocumentSchema: z.ZodObject<{
@@ -202,13 +202,13 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
         params: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
         returns: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        name: string;
         description: string;
+        name: string;
         params?: string[] | undefined;
         returns?: string | undefined;
     }, {
-        name: string;
         description: string;
+        name: string;
         params?: string[] | undefined;
         returns?: string | undefined;
     }>, "many">>;
@@ -221,21 +221,21 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
         category: z.ZodDefault<z.ZodEnum<["architecture", "library", "pattern", "implementation", "other"]>>;
         timestamp: z.ZodDefault<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        timestamp: string;
         description: string;
         id: string;
         title: string;
+        category: "architecture" | "implementation" | "library" | "pattern" | "other";
+        timestamp: string;
         rationale: string;
-        category: "architecture" | "library" | "pattern" | "implementation" | "other";
         alternatives?: string[] | undefined;
     }, {
         description: string;
         id: string;
         title: string;
         rationale: string;
+        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
         timestamp?: string | undefined;
         alternatives?: string[] | undefined;
-        category?: "architecture" | "library" | "pattern" | "implementation" | "other" | undefined;
     }>, "many">>;
     codeContexts: z.ZodOptional<z.ZodArray<z.ZodObject<{
         sessionId: z.ZodString;
@@ -246,37 +246,37 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
             filename: z.ZodOptional<z.ZodString>;
             description: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            code: string;
             language: string;
-            filename?: string | undefined;
+            code: string;
             description?: string | undefined;
+            filename?: string | undefined;
         }, {
             code: string;
+            description?: string | undefined;
             language?: string | undefined;
             filename?: string | undefined;
-            description?: string | undefined;
         }>, "many">;
         conversationSummary: z.ZodString;
         tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
-            code: string;
             language: string;
-            filename?: string | undefined;
+            code: string;
             description?: string | undefined;
+            filename?: string | undefined;
         }[];
         conversationSummary: string;
         tags?: string[] | undefined;
     }, {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
             code: string;
+            description?: string | undefined;
             language?: string | undefined;
             filename?: string | undefined;
-            description?: string | undefined;
         }[];
         conversationSummary: string;
         tags?: string[] | undefined;
@@ -286,13 +286,13 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
         date: z.ZodString;
         changes: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
+        changes: string[];
         date: string;
         version: string;
-        changes: string[];
     }, {
+        changes: string[];
         date: string;
         version: string;
-        changes: string[];
     }>, "many">>;
     includeTableOfContents: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     faq: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -316,11 +316,32 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
         role?: string | undefined;
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
-    language: "en" | "ko";
+    language: "ko" | "en";
     documentType: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE";
     includeTableOfContents: boolean;
     description?: string | undefined;
     title?: string | undefined;
+    codeContexts?: {
+        sessionId: string;
+        timestamp: string;
+        codeBlocks: {
+            language: string;
+            code: string;
+            description?: string | undefined;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+        tags?: string[] | undefined;
+    }[] | undefined;
+    designDecisions?: {
+        description: string;
+        id: string;
+        title: string;
+        category: "architecture" | "implementation" | "library" | "pattern" | "other";
+        timestamp: string;
+        rationale: string;
+        alternatives?: string[] | undefined;
+    }[] | undefined;
     projectName?: string | undefined;
     author?: string | undefined;
     version?: string | undefined;
@@ -331,36 +352,15 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
         steps?: string[] | undefined;
     } | undefined;
     apiReference?: {
-        name: string;
         description: string;
+        name: string;
         params?: string[] | undefined;
         returns?: string | undefined;
     }[] | undefined;
-    designDecisions?: {
-        timestamp: string;
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category: "architecture" | "library" | "pattern" | "implementation" | "other";
-        alternatives?: string[] | undefined;
-    }[] | undefined;
-    codeContexts?: {
-        timestamp: string;
-        sessionId: string;
-        codeBlocks: {
-            code: string;
-            language: string;
-            filename?: string | undefined;
-            description?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
     changelog?: {
+        changes: string[];
         date: string;
         version: string;
-        changes: string[];
     }[] | undefined;
     faq?: {
         question: string;
@@ -372,9 +372,30 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
     }[] | undefined;
 }, {
     documentType: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE";
-    language?: "en" | "ko" | undefined;
     description?: string | undefined;
     title?: string | undefined;
+    codeContexts?: {
+        sessionId: string;
+        timestamp: string;
+        codeBlocks: {
+            code: string;
+            description?: string | undefined;
+            language?: string | undefined;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+        tags?: string[] | undefined;
+    }[] | undefined;
+    designDecisions?: {
+        description: string;
+        id: string;
+        title: string;
+        rationale: string;
+        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
+        timestamp?: string | undefined;
+        alternatives?: string[] | undefined;
+    }[] | undefined;
+    language?: "ko" | "en" | undefined;
     projectName?: string | undefined;
     author?: string | undefined;
     version?: string | undefined;
@@ -385,36 +406,15 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
         steps?: string[] | undefined;
     } | undefined;
     apiReference?: {
-        name: string;
         description: string;
+        name: string;
         params?: string[] | undefined;
         returns?: string | undefined;
     }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        timestamp?: string | undefined;
-        alternatives?: string[] | undefined;
-        category?: "architecture" | "library" | "pattern" | "implementation" | "other" | undefined;
-    }[] | undefined;
-    codeContexts?: {
-        timestamp: string;
-        sessionId: string;
-        codeBlocks: {
-            code: string;
-            language?: string | undefined;
-            filename?: string | undefined;
-            description?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
     changelog?: {
+        changes: string[];
         date: string;
         version: string;
-        changes: string[];
     }[] | undefined;
     includeTableOfContents?: boolean | undefined;
     faq?: {
@@ -469,13 +469,13 @@ export declare const PublishDocumentSchema: z.ZodObject<{
         vaultPath: z.ZodOptional<z.ZodString>;
         tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        filename?: string | undefined;
         tags?: string[] | undefined;
+        filename?: string | undefined;
         wikiPath?: string | undefined;
         vaultPath?: string | undefined;
     }, {
-        filename?: string | undefined;
         tags?: string[] | undefined;
+        filename?: string | undefined;
         wikiPath?: string | undefined;
         vaultPath?: string | undefined;
     }>>;
@@ -484,8 +484,8 @@ export declare const PublishDocumentSchema: z.ZodObject<{
     title: string;
     document: string;
     options?: {
-        filename?: string | undefined;
         tags?: string[] | undefined;
+        filename?: string | undefined;
         wikiPath?: string | undefined;
         vaultPath?: string | undefined;
     } | undefined;
@@ -494,8 +494,8 @@ export declare const PublishDocumentSchema: z.ZodObject<{
     title: string;
     document: string;
     options?: {
-        filename?: string | undefined;
         tags?: string[] | undefined;
+        filename?: string | undefined;
         wikiPath?: string | undefined;
         vaultPath?: string | undefined;
     } | undefined;
@@ -512,37 +512,37 @@ export declare const CreateSessionLogSchema: z.ZodObject<{
             filename: z.ZodOptional<z.ZodString>;
             description: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            code: string;
             language: string;
-            filename?: string | undefined;
+            code: string;
             description?: string | undefined;
+            filename?: string | undefined;
         }, {
             code: string;
+            description?: string | undefined;
             language?: string | undefined;
             filename?: string | undefined;
-            description?: string | undefined;
         }>, "many">;
         conversationSummary: z.ZodString;
         tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
-            code: string;
             language: string;
-            filename?: string | undefined;
+            code: string;
             description?: string | undefined;
+            filename?: string | undefined;
         }[];
         conversationSummary: string;
         tags?: string[] | undefined;
     }, {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
             code: string;
+            description?: string | undefined;
             language?: string | undefined;
             filename?: string | undefined;
-            description?: string | undefined;
         }[];
         conversationSummary: string;
         tags?: string[] | undefined;
@@ -556,21 +556,21 @@ export declare const CreateSessionLogSchema: z.ZodObject<{
         category: z.ZodDefault<z.ZodEnum<["architecture", "library", "pattern", "implementation", "other"]>>;
         timestamp: z.ZodDefault<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        timestamp: string;
         description: string;
         id: string;
         title: string;
+        category: "architecture" | "implementation" | "library" | "pattern" | "other";
+        timestamp: string;
         rationale: string;
-        category: "architecture" | "library" | "pattern" | "implementation" | "other";
         alternatives?: string[] | undefined;
     }, {
         description: string;
         id: string;
         title: string;
         rationale: string;
+        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
         timestamp?: string | undefined;
         alternatives?: string[] | undefined;
-        category?: "architecture" | "library" | "pattern" | "implementation" | "other" | undefined;
     }>, "many">>;
     duration: z.ZodOptional<z.ZodNumber>;
     tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
@@ -590,65 +590,65 @@ export declare const CreateSessionLogSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     title: string;
     summary: string;
+    duration?: number | undefined;
+    tags?: string[] | undefined;
+    codeContexts?: {
+        sessionId: string;
+        timestamp: string;
+        codeBlocks: {
+            language: string;
+            code: string;
+            description?: string | undefined;
+            filename?: string | undefined;
+        }[];
+        conversationSummary: string;
+        tags?: string[] | undefined;
+    }[] | undefined;
+    designDecisions?: {
+        description: string;
+        id: string;
+        title: string;
+        category: "architecture" | "implementation" | "library" | "pattern" | "other";
+        timestamp: string;
+        rationale: string;
+        alternatives?: string[] | undefined;
+    }[] | undefined;
     options?: {
         logType: "daily" | "session";
         format: "markdown" | "json";
         outputPath?: string | undefined;
     } | undefined;
+}, {
+    title: string;
+    summary: string;
+    duration?: number | undefined;
     tags?: string[] | undefined;
-    designDecisions?: {
-        timestamp: string;
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category: "architecture" | "library" | "pattern" | "implementation" | "other";
-        alternatives?: string[] | undefined;
-    }[] | undefined;
     codeContexts?: {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
             code: string;
-            language: string;
-            filename?: string | undefined;
             description?: string | undefined;
+            language?: string | undefined;
+            filename?: string | undefined;
         }[];
         conversationSummary: string;
         tags?: string[] | undefined;
     }[] | undefined;
-    duration?: number | undefined;
-}, {
-    title: string;
-    summary: string;
+    designDecisions?: {
+        description: string;
+        id: string;
+        title: string;
+        rationale: string;
+        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
+        timestamp?: string | undefined;
+        alternatives?: string[] | undefined;
+    }[] | undefined;
     options?: {
         logType?: "daily" | "session" | undefined;
         outputPath?: string | undefined;
         format?: "markdown" | "json" | undefined;
     } | undefined;
-    tags?: string[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        timestamp?: string | undefined;
-        alternatives?: string[] | undefined;
-        category?: "architecture" | "library" | "pattern" | "implementation" | "other" | undefined;
-    }[] | undefined;
-    codeContexts?: {
-        timestamp: string;
-        sessionId: string;
-        codeBlocks: {
-            code: string;
-            language?: string | undefined;
-            filename?: string | undefined;
-            description?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
-    duration?: number | undefined;
 }>;
 export declare const AnalyzeCodeSchema: z.ZodObject<{
     code: z.ZodString;
@@ -661,7 +661,7 @@ export declare const AnalyzeCodeSchema: z.ZodObject<{
     code: string;
     useAI: boolean;
     generateDiagrams: boolean;
-    diagramTypes: ("class" | "flowchart" | "dependency" | "all")[];
+    diagramTypes: ("all" | "class" | "dependency" | "flowchart")[];
     language?: "typescript" | "javascript" | "python" | "go" | undefined;
     filename?: string | undefined;
 }, {
@@ -670,7 +670,7 @@ export declare const AnalyzeCodeSchema: z.ZodObject<{
     filename?: string | undefined;
     useAI?: boolean | undefined;
     generateDiagrams?: boolean | undefined;
-    diagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
+    diagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
 }>;
 export declare const ExportSessionSchema: z.ZodObject<{
     sessionIds: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
@@ -733,12 +733,12 @@ export declare const ProjectProfileSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         useAI?: boolean | undefined;
         defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
+        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
         excludePatterns?: string[] | undefined;
     }, {
         useAI?: boolean | undefined;
         defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
+        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
         excludePatterns?: string[] | undefined;
     }>>;
     documentation: z.ZodOptional<z.ZodObject<{
@@ -748,13 +748,13 @@ export declare const ProjectProfileSchema: z.ZodObject<{
         license: z.ZodOptional<z.ZodString>;
         includeTableOfContents: z.ZodOptional<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
-        language?: "en" | "ko" | undefined;
+        language?: "ko" | "en" | undefined;
         author?: string | undefined;
         license?: string | undefined;
         includeTableOfContents?: boolean | undefined;
         defaultDocType?: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE" | undefined;
     }, {
-        language?: "en" | "ko" | undefined;
+        language?: "ko" | "en" | undefined;
         author?: string | undefined;
         license?: string | undefined;
         includeTableOfContents?: boolean | undefined;
@@ -808,13 +808,18 @@ export declare const ProjectProfileSchema: z.ZodObject<{
     sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
 }, "strip", z.ZodTypeAny, {
     action: "create" | "get" | "update" | "delete" | "list" | "setActive" | "getActive" | "clone";
-    name?: string | undefined;
     description?: string | undefined;
+    name?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    repository?: string | undefined;
     version?: string | undefined;
     profileId?: string | undefined;
     newName?: string | undefined;
     projectPath?: string | undefined;
-    repository?: string | undefined;
     publishing?: {
         defaultPlatform?: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord" | undefined;
         platformSettings?: Record<string, unknown> | undefined;
@@ -823,11 +828,11 @@ export declare const ProjectProfileSchema: z.ZodObject<{
     codeAnalysis?: {
         useAI?: boolean | undefined;
         defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
+        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
         excludePatterns?: string[] | undefined;
     } | undefined;
     documentation?: {
-        language?: "en" | "ko" | undefined;
+        language?: "ko" | "en" | undefined;
         author?: string | undefined;
         license?: string | undefined;
         includeTableOfContents?: boolean | undefined;
@@ -846,20 +851,20 @@ export declare const ProjectProfileSchema: z.ZodObject<{
             email?: string | undefined;
         }[] | undefined;
     } | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
 }, {
     action: "create" | "get" | "update" | "delete" | "list" | "setActive" | "getActive" | "clone";
-    name?: string | undefined;
     description?: string | undefined;
+    name?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
+    sortOrder?: "asc" | "desc" | undefined;
+    repository?: string | undefined;
     version?: string | undefined;
     profileId?: string | undefined;
     newName?: string | undefined;
     projectPath?: string | undefined;
-    repository?: string | undefined;
     publishing?: {
         defaultPlatform?: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord" | undefined;
         platformSettings?: Record<string, unknown> | undefined;
@@ -868,11 +873,11 @@ export declare const ProjectProfileSchema: z.ZodObject<{
     codeAnalysis?: {
         useAI?: boolean | undefined;
         defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("class" | "flowchart" | "dependency" | "all")[] | undefined;
+        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
         excludePatterns?: string[] | undefined;
     } | undefined;
     documentation?: {
-        language?: "en" | "ko" | undefined;
+        language?: "ko" | "en" | undefined;
         author?: string | undefined;
         license?: string | undefined;
         includeTableOfContents?: boolean | undefined;
@@ -891,11 +896,6 @@ export declare const ProjectProfileSchema: z.ZodObject<{
             email?: string | undefined;
         }[] | undefined;
     } | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
 }>;
 export declare const SessionHistorySchema: z.ZodObject<{
     action: z.ZodEnum<["save", "get", "update", "delete", "list", "search", "stats"]>;
@@ -911,30 +911,30 @@ export declare const SessionHistorySchema: z.ZodObject<{
             code: z.ZodString;
             filename: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
-            code: string;
             language: string;
+            code: string;
             filename?: string | undefined;
         }, {
-            code: string;
             language: string;
+            code: string;
             filename?: string | undefined;
         }>, "many">;
         conversationSummary: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
-            code: string;
             language: string;
+            code: string;
             filename?: string | undefined;
         }[];
         conversationSummary: string;
     }, {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
-            code: string;
             language: string;
+            code: string;
             filename?: string | undefined;
         }[];
         conversationSummary: string;
@@ -947,19 +947,19 @@ export declare const SessionHistorySchema: z.ZodObject<{
         category: z.ZodString;
         timestamp: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        timestamp: string;
         description: string;
         id: string;
         title: string;
-        rationale: string;
         category: string;
+        timestamp: string;
+        rationale: string;
     }, {
-        timestamp: string;
         description: string;
         id: string;
         title: string;
-        rationale: string;
         category: string;
+        timestamp: string;
+        rationale: string;
     }>, "many">>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     limit: z.ZodOptional<z.ZodNumber>;
@@ -970,69 +970,69 @@ export declare const SessionHistorySchema: z.ZodObject<{
     keyword: z.ZodOptional<z.ZodString>;
     searchIn: z.ZodOptional<z.ZodArray<z.ZodEnum<["title", "summary", "tags"]>, "many">>;
 }, "strip", z.ZodTypeAny, {
-    action: "get" | "update" | "delete" | "list" | "save" | "search" | "stats";
-    title?: string | undefined;
+    action: "search" | "stats" | "get" | "update" | "delete" | "list" | "save";
     sessionId?: string | undefined;
+    title?: string | undefined;
+    summary?: string | undefined;
     tags?: string[] | undefined;
-    designDecisions?: {
-        timestamp: string;
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category: string;
-    }[] | undefined;
     codeContexts?: {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
-            code: string;
             language: string;
+            code: string;
             filename?: string | undefined;
         }[];
         conversationSummary: string;
     }[] | undefined;
-    summary?: string | undefined;
+    designDecisions?: {
+        description: string;
+        id: string;
+        title: string;
+        category: string;
+        timestamp: string;
+        rationale: string;
+    }[] | undefined;
     metadata?: Record<string, unknown> | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
-    sortBy?: "title" | "createdAt" | "updatedAt" | undefined;
+    sortBy?: "createdAt" | "updatedAt" | "title" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
+    searchIn?: ("title" | "summary" | "tags")[] | undefined;
     filterTags?: string[] | undefined;
     keyword?: string | undefined;
-    searchIn?: ("title" | "tags" | "summary")[] | undefined;
 }, {
-    action: "get" | "update" | "delete" | "list" | "save" | "search" | "stats";
-    title?: string | undefined;
+    action: "search" | "stats" | "get" | "update" | "delete" | "list" | "save";
     sessionId?: string | undefined;
+    title?: string | undefined;
+    summary?: string | undefined;
     tags?: string[] | undefined;
-    designDecisions?: {
-        timestamp: string;
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category: string;
-    }[] | undefined;
     codeContexts?: {
-        timestamp: string;
         sessionId: string;
+        timestamp: string;
         codeBlocks: {
-            code: string;
             language: string;
+            code: string;
             filename?: string | undefined;
         }[];
         conversationSummary: string;
     }[] | undefined;
-    summary?: string | undefined;
+    designDecisions?: {
+        description: string;
+        id: string;
+        title: string;
+        category: string;
+        timestamp: string;
+        rationale: string;
+    }[] | undefined;
     metadata?: Record<string, unknown> | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
-    sortBy?: "title" | "createdAt" | "updatedAt" | undefined;
+    sortBy?: "createdAt" | "updatedAt" | "title" | undefined;
     sortOrder?: "asc" | "desc" | undefined;
+    searchIn?: ("title" | "summary" | "tags")[] | undefined;
     filterTags?: string[] | undefined;
     keyword?: string | undefined;
-    searchIn?: ("title" | "tags" | "summary")[] | undefined;
 }>;
 export declare const SessionStatsSchema: z.ZodObject<{
     action: z.ZodEnum<["overview", "languages", "timeline", "tags", "productivity", "trends"]>;
@@ -1050,17 +1050,17 @@ export declare const SessionStatsSchema: z.ZodObject<{
     period: "all" | "day" | "week" | "month" | "year";
     includeInsights: boolean;
     tags?: string[] | undefined;
+    until?: string | undefined;
     languages?: string[] | undefined;
     since?: string | undefined;
-    until?: string | undefined;
     compareWith?: "previous" | "average" | undefined;
 }, {
     action: "tags" | "overview" | "languages" | "timeline" | "productivity" | "trends";
     tags?: string[] | undefined;
+    until?: string | undefined;
     format?: "summary" | "detailed" | "chart" | undefined;
     languages?: string[] | undefined;
     since?: string | undefined;
-    until?: string | undefined;
     period?: "all" | "day" | "week" | "month" | "year" | undefined;
     includeInsights?: boolean | undefined;
     compareWith?: "previous" | "average" | undefined;
@@ -1075,15 +1075,15 @@ export declare const AutoTagSchema: z.ZodObject<{
         filename: z.ZodOptional<z.ZodString>;
         description: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        code: string;
         language: string;
-        filename?: string | undefined;
+        code: string;
         description?: string | undefined;
+        filename?: string | undefined;
     }, {
         code: string;
+        description?: string | undefined;
         language?: string | undefined;
         filename?: string | undefined;
-        description?: string | undefined;
     }>, "many">>;
     maxTags: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     minConfidence: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
@@ -1093,11 +1093,11 @@ export declare const AutoTagSchema: z.ZodObject<{
         content: z.ZodString;
         tags: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        tags: string[];
         content: string;
+        tags: string[];
     }, {
-        tags: string[];
         content: string;
+        tags: string[];
     }>, "many">>;
     enableAutoTag: z.ZodOptional<z.ZodBoolean>;
     defaultCategories: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
@@ -1105,11 +1105,11 @@ export declare const AutoTagSchema: z.ZodObject<{
         pattern: z.ZodString;
         tags: z.ZodArray<z.ZodString, "many">;
     }, "strip", z.ZodTypeAny, {
-        pattern: string;
         tags: string[];
+        pattern: string;
     }, {
-        pattern: string;
         tags: string[];
+        pattern: string;
     }>, "many">>;
     useAI: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
@@ -1118,49 +1118,49 @@ export declare const AutoTagSchema: z.ZodObject<{
     maxTags: number;
     minConfidence: number;
     includeExisting: boolean;
+    content?: string | undefined;
     sessionId?: string | undefined;
     codeBlocks?: {
-        code: string;
         language: string;
-        filename?: string | undefined;
+        code: string;
         description?: string | undefined;
+        filename?: string | undefined;
     }[] | undefined;
-    content?: string | undefined;
     categories?: string[] | undefined;
     examples?: {
-        tags: string[];
         content: string;
+        tags: string[];
     }[] | undefined;
     enableAutoTag?: boolean | undefined;
     defaultCategories?: string[] | undefined;
     customPatterns?: {
-        pattern: string;
         tags: string[];
+        pattern: string;
     }[] | undefined;
 }, {
     action: "suggest" | "apply" | "train" | "config";
+    content?: string | undefined;
     sessionId?: string | undefined;
     codeBlocks?: {
         code: string;
+        description?: string | undefined;
         language?: string | undefined;
         filename?: string | undefined;
-        description?: string | undefined;
     }[] | undefined;
     useAI?: boolean | undefined;
-    content?: string | undefined;
     maxTags?: number | undefined;
     minConfidence?: number | undefined;
     includeExisting?: boolean | undefined;
     categories?: string[] | undefined;
     examples?: {
-        tags: string[];
         content: string;
+        tags: string[];
     }[] | undefined;
     enableAutoTag?: boolean | undefined;
     defaultCategories?: string[] | undefined;
     customPatterns?: {
-        pattern: string;
         tags: string[];
+        pattern: string;
     }[] | undefined;
 }>;
 export declare const TemplateSchema: z.ZodObject<{
@@ -1198,12 +1198,12 @@ export declare const TemplateSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     format: "json" | "yaml";
     action: "create" | "get" | "update" | "delete" | "list" | "apply" | "preview" | "import" | "export";
-    name?: string | undefined;
+    content?: string | undefined;
     description?: string | undefined;
-    type?: "document" | "report" | "export" | "session-log" | undefined;
+    name?: string | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
-    content?: string | undefined;
+    type?: "document" | "report" | "export" | "session-log" | undefined;
     templateId?: string | undefined;
     variables?: {
         name: string;
@@ -1217,13 +1217,13 @@ export declare const TemplateSchema: z.ZodObject<{
     filterType?: "document" | "report" | "export" | "session-log" | undefined;
 }, {
     action: "create" | "get" | "update" | "delete" | "list" | "apply" | "preview" | "import" | "export";
-    name?: string | undefined;
+    content?: string | undefined;
     description?: string | undefined;
-    type?: "document" | "report" | "export" | "session-log" | undefined;
-    format?: "json" | "yaml" | undefined;
+    name?: string | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
-    content?: string | undefined;
+    type?: "document" | "report" | "export" | "session-log" | undefined;
+    format?: "json" | "yaml" | undefined;
     templateId?: string | undefined;
     variables?: {
         name: string;
@@ -1263,8 +1263,8 @@ export declare const BatchSchema: z.ZodObject<{
     includeResults: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     includeErrors: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
-    action: "status" | "preview" | "execute" | "cancel" | "history";
     limit: number;
+    action: "status" | "preview" | "execute" | "cancel" | "history";
     mode: "sequential" | "parallel";
     stopOnError: boolean;
     timeout: number;
@@ -1280,8 +1280,8 @@ export declare const BatchSchema: z.ZodObject<{
     jobId?: string | undefined;
 }, {
     action: "status" | "preview" | "execute" | "cancel" | "history";
-    status?: "pending" | "running" | "completed" | "failed" | "cancelled" | undefined;
     limit?: number | undefined;
+    status?: "pending" | "running" | "completed" | "failed" | "cancelled" | undefined;
     operations?: {
         tool: string;
         params: Record<string, unknown>;
@@ -1322,9 +1322,9 @@ export declare const GitSchema: z.ZodObject<{
     sessionId: z.ZodOptional<z.ZodString>;
     snapshotType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["minimal", "full"]>>>;
 }, "strip", z.ZodTypeAny, {
-    language: "en" | "ko" | "auto";
-    action: "status" | "log" | "diff" | "branch" | "snapshot" | "extractDecisions" | "linkToSession";
     limit: number;
+    language: "ko" | "en" | "auto";
+    action: "status" | "log" | "diff" | "branch" | "snapshot" | "extractDecisions" | "linkToSession";
     includeUntracked: boolean;
     oneline: boolean;
     diffType: "all" | "staged" | "unstaged";
@@ -1337,11 +1337,11 @@ export declare const GitSchema: z.ZodObject<{
     logLimit: number;
     includeStash: boolean;
     snapshotType: "minimal" | "full";
-    path?: string | undefined;
     sessionId?: string | undefined;
+    path?: string | undefined;
+    until?: string | undefined;
     author?: string | undefined;
     since?: string | undefined;
-    until?: string | undefined;
     repoPath?: string | undefined;
     grep?: string | undefined;
     fromRef?: string | undefined;
@@ -1349,13 +1349,13 @@ export declare const GitSchema: z.ZodObject<{
     patterns?: string[] | undefined;
 }, {
     action: "status" | "log" | "diff" | "branch" | "snapshot" | "extractDecisions" | "linkToSession";
-    language?: "en" | "ko" | "auto" | undefined;
-    path?: string | undefined;
     sessionId?: string | undefined;
-    author?: string | undefined;
+    path?: string | undefined;
     limit?: number | undefined;
-    since?: string | undefined;
+    language?: "ko" | "en" | "auto" | undefined;
     until?: string | undefined;
+    author?: string | undefined;
+    since?: string | undefined;
     repoPath?: string | undefined;
     includeUntracked?: boolean | undefined;
     grep?: string | undefined;
@@ -1373,6 +1373,80 @@ export declare const GitSchema: z.ZodObject<{
     includeStash?: boolean | undefined;
     patterns?: string[] | undefined;
     snapshotType?: "minimal" | "full" | undefined;
+}>;
+export declare const CaptureTranscriptSchema: z.ZodObject<{
+    action: z.ZodDefault<z.ZodOptional<z.ZodEnum<["capture", "preview", "list"]>>>;
+    transcriptPath: z.ZodOptional<z.ZodString>;
+    cwd: z.ZodOptional<z.ZodString>;
+    all: z.ZodOptional<z.ZodBoolean>;
+    limit: z.ZodOptional<z.ZodNumber>;
+    minPrompts: z.ZodOptional<z.ZodNumber>;
+    maxFiles: z.ZodOptional<z.ZodNumber>;
+    maxDecisions: z.ZodOptional<z.ZodNumber>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+}, "strip", z.ZodTypeAny, {
+    action: "list" | "preview" | "capture";
+    tags?: string[] | undefined;
+    limit?: number | undefined;
+    maxDecisions?: number | undefined;
+    all?: boolean | undefined;
+    cwd?: string | undefined;
+    minPrompts?: number | undefined;
+    maxFiles?: number | undefined;
+    transcriptPath?: string | undefined;
+}, {
+    tags?: string[] | undefined;
+    limit?: number | undefined;
+    maxDecisions?: number | undefined;
+    all?: boolean | undefined;
+    cwd?: string | undefined;
+    minPrompts?: number | undefined;
+    maxFiles?: number | undefined;
+    transcriptPath?: string | undefined;
+    action?: "list" | "preview" | "capture" | undefined;
+}>;
+export declare const DigestSchema: z.ZodObject<{
+    period: z.ZodOptional<z.ZodEnum<["today", "yesterday", "week", "last-week", "month", "custom"]>>;
+    since: z.ZodOptional<z.ZodString>;
+    until: z.ZodOptional<z.ZodString>;
+    groupBy: z.ZodOptional<z.ZodEnum<["day", "project", "tag", "none"]>>;
+    language: z.ZodOptional<z.ZodEnum<["en", "ko"]>>;
+    format: z.ZodOptional<z.ZodEnum<["markdown", "json"]>>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    project: z.ZodOptional<z.ZodString>;
+    includeFiles: z.ZodOptional<z.ZodBoolean>;
+    includeDecisions: z.ZodOptional<z.ZodBoolean>;
+    includePrompts: z.ZodOptional<z.ZodBoolean>;
+    maxSessions: z.ZodOptional<z.ZodNumber>;
+    title: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    title?: string | undefined;
+    tags?: string[] | undefined;
+    language?: "ko" | "en" | undefined;
+    until?: string | undefined;
+    project?: string | undefined;
+    format?: "markdown" | "json" | undefined;
+    since?: string | undefined;
+    period?: "custom" | "week" | "month" | "today" | "yesterday" | "last-week" | undefined;
+    groupBy?: "project" | "day" | "tag" | "none" | undefined;
+    includeFiles?: boolean | undefined;
+    includeDecisions?: boolean | undefined;
+    includePrompts?: boolean | undefined;
+    maxSessions?: number | undefined;
+}, {
+    title?: string | undefined;
+    tags?: string[] | undefined;
+    language?: "ko" | "en" | undefined;
+    until?: string | undefined;
+    project?: string | undefined;
+    format?: "markdown" | "json" | undefined;
+    since?: string | undefined;
+    period?: "custom" | "week" | "month" | "today" | "yesterday" | "last-week" | undefined;
+    groupBy?: "project" | "day" | "tag" | "none" | undefined;
+    includeFiles?: boolean | undefined;
+    includeDecisions?: boolean | undefined;
+    includePrompts?: boolean | undefined;
+    maxSessions?: number | undefined;
 }>;
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;
