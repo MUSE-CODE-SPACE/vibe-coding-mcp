@@ -123,6 +123,8 @@ describe('captureEngine', () => {
         fileChanges: [
           { filePath: '/p/a.json', kind: 'write', touches: 9, language: 'json' },
           { filePath: '/p/b.go', kind: 'edit', touches: 1, language: 'go' },
+          // bare unknown extension must not become a tag
+          { filePath: '/p/notes.txt', kind: 'write', touches: 5, language: 'txt' },
         ],
       },
       '/p/My Project',

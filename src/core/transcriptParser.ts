@@ -51,8 +51,14 @@ export interface ParsedTranscript {
   claudeVersion?: string;
   startedAt?: string;
   endedAt?: string;
-  /** Wall-clock seconds between first and last record. */
+  /**
+   * Active seconds: the sum of gaps between consecutive records, excluding any
+   * gap longer than `idleGapSec` (a session resumed the next morning is not a
+   * 20-hour session). See `wallClockSec` for first-to-last.
+   */
   durationSec?: number;
+  /** Wall-clock seconds between first and last record. */
+  wallClockSec?: number;
   userPrompts: UserPrompt[];
   /** Assistant prose (text blocks only), in order. */
   assistantTexts: string[];
@@ -75,9 +81,21 @@ export interface ParseOptions {
   maxTextChars?: number;
   /** Max number of commands kept. Default 200. */
   maxCommands?: number;
+  /** Gaps between records longer than this are treated as idle and excluded from `durationSec`. Default 1800 (30 min). */
+  idleGapSec?: number;
 }
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+
+/** Languages that count as "code" for tagging; data/doc formats and unknown extensions do not. */
+const CODE_LANGS = new Set([
+  'typescript', 'tsx', 'javascript', 'jsx', 'python', 'go', 'rust', 'java', 'kotlin', 'swift', 'ruby',
+  'php', 'csharp', 'cpp', 'c', 'html', 'css', 'scss', 'sql', 'bash', 'vue', 'svelte', 'dart', 'lua', 'elixir',
+]);
+
+export function isCodeLanguage(lang: string): boolean {
+  return CODE_LANGS.has(lang);
+}
 
 /** Map a file extension to a fenced-code language id. */
 export function languageFromPath(filePath: string): string {
@@ -101,6 +119,11 @@ export function cleanUserText(text: string): string {
     .replace(/<command-message>[\s\S]*?<\/command-message>/g, '')
     .replace(/<command-args>[\s\S]*?<\/command-args>/g, '')
     .replace(/<local-command-stdout>[\s\S]*?<\/local-command-stdout>/g, '')
+    // Harness-generated user-role records: background task notifications and
+    // image-dimension notes are not something the human typed.
+    .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, '')
+    .replace(/^\[SYSTEM NOTIFICATION[^\]]*\][^\n]*$/gm, '')
+    .replace(/^\[Image[^\]]*\]\s*$/gm, '')
     // Pasted blocks (emails, logs, …) are context, not the ask: collapse them
     // to a short marker so titles and "what was asked" reflect the user's words.
     // Note: Claude Code writes the closing tag with the id too: </pasted_content id="…">
@@ -140,6 +163,9 @@ export function parseTranscriptText(text: string, options: ParseOptions = {}): P
   const maxSnippetChars = options.maxSnippetChars ?? 4000;
   const maxTextChars = options.maxTextChars ?? 2000;
   const maxCommands = options.maxCommands ?? 200;
+  const idleGapSec = options.idleGapSec ?? 1800;
+  let prevTs: number | undefined;
+  let activeSec = 0;
 
   const result: ParsedTranscript = {
     userPrompts: [],
@@ -181,6 +207,14 @@ export function parseTranscriptText(text: string, options: ParseOptions = {}): P
     if (rec.timestamp) {
       result.startedAt ??= rec.timestamp;
       result.endedAt = rec.timestamp;
+      const ts = new Date(rec.timestamp).getTime();
+      if (Number.isFinite(ts)) {
+        if (prevTs !== undefined) {
+          const gap = (ts - prevTs) / 1000;
+          if (gap >= 0 && gap <= idleGapSec) activeSec += gap;
+        }
+        prevTs = ts;
+      }
     }
 
     const content = rec.message?.content;
@@ -284,7 +318,10 @@ export function parseTranscriptText(text: string, options: ParseOptions = {}): P
 
   if (result.startedAt && result.endedAt) {
     const ms = new Date(result.endedAt).getTime() - new Date(result.startedAt).getTime();
-    if (Number.isFinite(ms) && ms >= 0) result.durationSec = Math.round(ms / 1000);
+    if (Number.isFinite(ms) && ms >= 0) {
+      result.wallClockSec = Math.round(ms / 1000);
+      result.durationSec = Math.round(activeSec);
+    }
   }
 
   return result;

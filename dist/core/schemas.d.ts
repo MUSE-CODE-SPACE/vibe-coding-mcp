@@ -683,7 +683,7 @@ export declare const ExportSessionSchema: z.ZodObject<{
     title: z.ZodOptional<z.ZodString>;
     bundleMultiple: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
-    format: "markdown" | "json" | "html";
+    format: "html" | "markdown" | "json";
     includeMetadata: boolean;
     includeCodeBlocks: boolean;
     includeDesignDecisions: boolean;
@@ -693,7 +693,7 @@ export declare const ExportSessionSchema: z.ZodObject<{
     outputPath?: string | undefined;
     sessionIds?: string[] | undefined;
 }, {
-    format: "markdown" | "json" | "html";
+    format: "html" | "markdown" | "json";
     title?: string | undefined;
     outputPath?: string | undefined;
     sessionIds?: string[] | undefined;

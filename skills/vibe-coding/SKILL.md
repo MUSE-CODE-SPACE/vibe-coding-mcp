@@ -3,7 +3,14 @@ name: vibe-coding
 description: Auto-documents AI coding sessions. Captures Claude Code transcripts into a local session store (prompts, files changed, code, commands, design decisions), then turns them into daily logs, standups, weekly reports, ADRs and PR descriptions, and publishes to Notion, Obsidian, GitHub Wiki, Confluence, Slack or Discord. Use when the user asks to "document this session", "what did I do today/this week", "write my standup / weekly report", "why did we choose X", "write a PR description for this refactor", "save this session", or to set up automatic session capture for Claude Code.
 when_to_use: Any request about remembering, summarizing, reporting on, or publishing past AI coding sessions; any request to install or debug vibe-coding-mcp auto-capture hooks.
 argument-hint: "[standup | weekly | document <sessionId> | pr <sessionId> | setup]"
-allowed-tools: mcp__vibe-coding-mcp__*, Bash(npx vibe-coding-mcp *), Bash(vibe-coding-mcp *), Read
+allowed-tools: mcp__vibe-coding-mcp__* Bash(npx vibe-coding-mcp *) Bash(vibe-coding-mcp *) Read
+license: MIT
+compatibility: Designed for Claude Code (also works in any MCP-capable agent). Requires Node.js 18+ and npx; downloads the vibe-coding-mcp package from npm on first run. Publishing to Notion/Confluence/Slack/Discord needs the matching API key or webhook.
+metadata:
+  author: MUSE-CODE-SPACE
+  version: "2.15.1"
+  homepage: https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp
+  npm: vibe-coding-mcp
 ---
 
 # vibe-coding — session memory for AI pair programming

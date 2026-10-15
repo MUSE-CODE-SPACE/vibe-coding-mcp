@@ -1,6 +1,6 @@
 {
   "name": "vibe-coding-mcp",
-  "version": "2.15.0",
+  "version": "2.15.1",
   "mcpName": "io.github.MUSE-CODE-SPACE/vibe-coding",
   "description": "Auto-capture Claude Code sessions from their transcripts (hook + CLI), then summarize, digest, document, and publish them — MCP server + agent skill",
   "main": "dist/index.js",

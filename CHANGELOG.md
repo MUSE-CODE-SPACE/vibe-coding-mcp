@@ -10,6 +10,16 @@ All notable changes to `vibe-coding-mcp` are documented here. Format follows [Ke
 - Git `prepare-commit-msg` integration surfacing decision summaries.
 - Capture for Cursor / Codex CLI transcripts (today: Claude Code only).
 
+## [2.15.1] - 2026-10-15
+
+### Fixed
+- **Session duration counted idle time.** `durationSec` was first-record → last-record, so a session resumed over several days reported hundreds of hours in `muse_digest`. It is now *active* time: gaps between records longer than 30 minutes (`idleGapSec`) are excluded. Wall-clock is still available as `wallClockSec`.
+- **Harness messages captured as prompts.** Background `<task-notification>` records and `[Image: …]` dimension notes are user-role records in the transcript but not something the human typed; they no longer appear in "What was asked" or in prompt counts.
+- **Junk language tags.** Files with unknown extensions (`.txt`, `.srt`, `.lock`) were tagged by extension; only real code languages are tagged now.
+
+### Changed
+- `skills/vibe-coding/SKILL.md` frontmatter now carries `license`, `compatibility` and `metadata` (Agent Skills spec); packaged for Agensi.
+
 ## [2.15.0] - 2026-10-13
 
 ### Highlights ⭐

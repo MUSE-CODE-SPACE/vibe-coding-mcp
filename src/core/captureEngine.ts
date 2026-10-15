@@ -12,6 +12,7 @@ import * as path from 'path';
 import {
   parseTranscriptFile,
   findLatestTranscript,
+  isCodeLanguage,
   ParsedTranscript,
   ParseOptions,
 } from './transcriptParser.js';
@@ -68,7 +69,10 @@ export interface CaptureMetadata {
   claudeVersion?: string;
   startedAt?: string;
   endedAt?: string;
+  /** Active seconds (idle gaps > 30 min excluded). */
   durationSec?: number;
+  /** First record → last record. */
+  wallClockSec?: number;
   promptCount: number;
   assistantTurns: number;
   filesTouched: string[];
@@ -159,7 +163,8 @@ export function buildTags(parsed: ParsedTranscript, cwd?: string, extra: string[
   }
   const langCount = new Map<string, number>();
   for (const f of parsed.fileChanges) {
-    if (['text', 'json', 'markdown', 'yaml', 'toml', 'xml'].includes(f.language)) continue;
+    // Data/doc formats and bare unknown extensions (`txt`, `srt`, `lock`) are not language tags.
+    if (!isCodeLanguage(f.language)) continue;
     langCount.set(f.language, (langCount.get(f.language) || 0) + f.touches);
   }
   [...langCount.entries()]
@@ -279,6 +284,7 @@ export async function captureTranscript(transcriptPath: string, options: Capture
     startedAt: parsed.startedAt,
     endedAt: parsed.endedAt,
     durationSec: parsed.durationSec,
+    wallClockSec: parsed.wallClockSec,
     promptCount: parsed.userPrompts.length,
     assistantTurns: parsed.assistantTurns,
     filesTouched: parsed.fileChanges.map((f) => relativeTo(cwd, f.filePath)),

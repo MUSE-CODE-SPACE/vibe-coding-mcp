@@ -43,8 +43,14 @@ export interface ParsedTranscript {
     claudeVersion?: string;
     startedAt?: string;
     endedAt?: string;
-    /** Wall-clock seconds between first and last record. */
+    /**
+     * Active seconds: the sum of gaps between consecutive records, excluding any
+     * gap longer than `idleGapSec` (a session resumed the next morning is not a
+     * 20-hour session). See `wallClockSec` for first-to-last.
+     */
     durationSec?: number;
+    /** Wall-clock seconds between first and last record. */
+    wallClockSec?: number;
     userPrompts: UserPrompt[];
     /** Assistant prose (text blocks only), in order. */
     assistantTexts: string[];
@@ -66,7 +72,10 @@ export interface ParseOptions {
     maxTextChars?: number;
     /** Max number of commands kept. Default 200. */
     maxCommands?: number;
+    /** Gaps between records longer than this are treated as idle and excluded from `durationSec`. Default 1800 (30 min). */
+    idleGapSec?: number;
 }
+export declare function isCodeLanguage(lang: string): boolean;
 /** Map a file extension to a fenced-code language id. */
 export declare function languageFromPath(filePath: string): string;
 /** Strip Claude Code's injected wrapper tags from a human prompt. */

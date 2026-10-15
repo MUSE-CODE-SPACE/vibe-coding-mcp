@@ -124,6 +124,31 @@ describe('transcriptParser', () => {
     expect(p.userPrompts[0].text).toContain('[truncated 4950 chars]');
   });
 
+  it('excludes idle gaps from durationSec but keeps wallClockSec', () => {
+    const text = [
+      user('start', '2026-01-01T10:00:00.000Z'),
+      assistant([{ type: 'text', text: 'ok' }], '2026-01-01T10:05:00.000Z'),
+      // resumed the next day: a 23h55m gap is idle, not work
+      user('continue', '2026-01-02T10:00:00.000Z'),
+      assistant([{ type: 'text', text: 'done' }], '2026-01-02T10:02:00.000Z'),
+    ].join('\n');
+    const p = parseTranscriptText(text);
+    expect(p.durationSec).toBe(420);
+    expect(p.wallClockSec).toBe(86520);
+    // a lower threshold drops the 5-minute gap too
+    expect(parseTranscriptText(text, { idleGapSec: 200 }).durationSec).toBe(120);
+  });
+
+  it('drops harness-generated user records (task notifications, image notes)', () => {
+    const text = [
+      user('[SYSTEM NOTIFICATION - NOT USER INPUT]\n<task-notification>\n<task-id>abc</task-id>\n<status>completed</status>\n</task-notification>', '2026-01-01T10:00:00.000Z'),
+      user('[Image: original 2700x1920, displayed at 2000x1422. Multiply coordinates by 1.35 to map to original image.]', '2026-01-01T10:01:00.000Z'),
+      user('[Image: original 100x100]\nlooks good, ship it', '2026-01-01T10:02:00.000Z'),
+    ].join('\n');
+    const p = parseTranscriptText(text);
+    expect(p.userPrompts.map((u) => u.text)).toEqual(['looks good, ship it']);
+  });
+
   it('returns an empty structure for an empty transcript', () => {
     const p = parseTranscriptText('');
     expect(p.userPrompts).toEqual([]);

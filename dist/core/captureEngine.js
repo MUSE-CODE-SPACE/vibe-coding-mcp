@@ -8,7 +8,7 @@
  * update of the same stored session, not a new one.
  */
 import * as path from 'path';
-import { parseTranscriptFile, findLatestTranscript, } from './transcriptParser.js';
+import { parseTranscriptFile, findLatestTranscript, isCodeLanguage, } from './transcriptParser.js';
 import { listSessions, saveSession, updateSession } from './sessionStorage.js';
 import { summarizeDesignDecisions } from '../tools/summarizeDesignDecisions.js';
 import { logger } from './logger.js';
@@ -90,7 +90,8 @@ export function buildTags(parsed, cwd, extra = []) {
     }
     const langCount = new Map();
     for (const f of parsed.fileChanges) {
-        if (['text', 'json', 'markdown', 'yaml', 'toml', 'xml'].includes(f.language))
+        // Data/doc formats and bare unknown extensions (`txt`, `srt`, `lock`) are not language tags.
+        if (!isCodeLanguage(f.language))
             continue;
         langCount.set(f.language, (langCount.get(f.language) || 0) + f.touches);
     }
@@ -197,6 +198,7 @@ export async function captureTranscript(transcriptPath, options = {}) {
         startedAt: parsed.startedAt,
         endedAt: parsed.endedAt,
         durationSec: parsed.durationSec,
+        wallClockSec: parsed.wallClockSec,
         promptCount: parsed.userPrompts.length,
         assistantTurns: parsed.assistantTurns,
         filesTouched: parsed.fileChanges.map((f) => relativeTo(cwd, f.filePath)),

@@ -54,7 +54,10 @@ export interface CaptureMetadata {
     claudeVersion?: string;
     startedAt?: string;
     endedAt?: string;
+    /** Active seconds (idle gaps > 30 min excluded). */
     durationSec?: number;
+    /** First record → last record. */
+    wallClockSec?: number;
     promptCount: number;
     assistantTurns: number;
     filesTouched: string[];

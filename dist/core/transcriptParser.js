@@ -15,6 +15,14 @@ import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+/** Languages that count as "code" for tagging; data/doc formats and unknown extensions do not. */
+const CODE_LANGS = new Set([
+    'typescript', 'tsx', 'javascript', 'jsx', 'python', 'go', 'rust', 'java', 'kotlin', 'swift', 'ruby',
+    'php', 'csharp', 'cpp', 'c', 'html', 'css', 'scss', 'sql', 'bash', 'vue', 'svelte', 'dart', 'lua', 'elixir',
+]);
+export function isCodeLanguage(lang) {
+    return CODE_LANGS.has(lang);
+}
 /** Map a file extension to a fenced-code language id. */
 export function languageFromPath(filePath) {
     const ext = path.extname(filePath).toLowerCase().replace('.', '');
@@ -36,6 +44,11 @@ export function cleanUserText(text) {
         .replace(/<command-message>[\s\S]*?<\/command-message>/g, '')
         .replace(/<command-args>[\s\S]*?<\/command-args>/g, '')
         .replace(/<local-command-stdout>[\s\S]*?<\/local-command-stdout>/g, '')
+        // Harness-generated user-role records: background task notifications and
+        // image-dimension notes are not something the human typed.
+        .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, '')
+        .replace(/^\[SYSTEM NOTIFICATION[^\]]*\][^\n]*$/gm, '')
+        .replace(/^\[Image[^\]]*\]\s*$/gm, '')
         // Pasted blocks (emails, logs, …) are context, not the ask: collapse them
         // to a short marker so titles and "what was asked" reflect the user's words.
         // Note: Claude Code writes the closing tag with the id too: </pasted_content id="…">
@@ -59,6 +72,9 @@ export function parseTranscriptText(text, options = {}) {
     const maxSnippetChars = options.maxSnippetChars ?? 4000;
     const maxTextChars = options.maxTextChars ?? 2000;
     const maxCommands = options.maxCommands ?? 200;
+    const idleGapSec = options.idleGapSec ?? 1800;
+    let prevTs;
+    let activeSec = 0;
     const result = {
         userPrompts: [],
         assistantTexts: [],
@@ -97,6 +113,15 @@ export function parseTranscriptText(text, options = {}) {
         if (rec.timestamp) {
             result.startedAt ??= rec.timestamp;
             result.endedAt = rec.timestamp;
+            const ts = new Date(rec.timestamp).getTime();
+            if (Number.isFinite(ts)) {
+                if (prevTs !== undefined) {
+                    const gap = (ts - prevTs) / 1000;
+                    if (gap >= 0 && gap <= idleGapSec)
+                        activeSec += gap;
+                }
+                prevTs = ts;
+            }
         }
         const content = rec.message?.content;
         if (rec.type === 'user') {
@@ -194,8 +219,10 @@ export function parseTranscriptText(text, options = {}) {
     }
     if (result.startedAt && result.endedAt) {
         const ms = new Date(result.endedAt).getTime() - new Date(result.startedAt).getTime();
-        if (Number.isFinite(ms) && ms >= 0)
-            result.durationSec = Math.round(ms / 1000);
+        if (Number.isFinite(ms) && ms >= 0) {
+            result.wallClockSec = Math.round(ms / 1000);
+            result.durationSec = Math.round(activeSec);
+        }
     }
     return result;
 }
