@@ -10,6 +10,16 @@ All notable changes to `vibe-coding-mcp` are documented here. Format follows [Ke
 - Git `prepare-commit-msg` integration surfacing decision summaries.
 - Capture for Cursor / Codex CLI transcripts (today: Claude Code only).
 
+## [2.15.2] - 2026-10-22
+
+### Changed
+- Dependencies: `@anthropic-ai/sdk` 1.1 (API version 2026-10-21), `@modelcontextprotocol/sdk` 1.32, `zod` 4.6, `express` 5.3, `@notionhq/client` 5.27, `dotenv` 18, `jest` 30.5, TypeScript 6.0, `@types/node` 26.
+- AI summarization / auto-tagging now call `claude-sonnet-5-5` (the previous `claude-sonnet-4-20250514` is deprecated).
+- CI runs on Node 22 + 24; GitHub Actions bumped to `checkout@v7` / `setup-node@v7` / `codeql-action@v4`.
+
+### Fixed
+- Server version reported over MCP `initialize` now matches the package version.
+
 ## [2.15.1] - 2026-10-15
 
 ### Fixed
