@@ -207,7 +207,7 @@ npm run typecheck && npm test && npm run build
 node dist/cli.js capture --dry-run     # try the capture engine on your own transcript
 ```
 
-Adding a tool is one file in `src/tools/<name>.ts`, a Zod schema in `src/core/schemas.ts`, and one entry in `src/core/toolRegistry.ts`. CI runs typecheck + build + tests on Node 20 and 22.
+Adding a tool is one file in `src/tools/<name>.ts`, a Zod schema in `src/core/schemas.ts`, and one entry in `src/core/toolRegistry.ts`. CI runs typecheck + build + tests on Node 22 and 24.
 
 ## Security
 
