@@ -19,7 +19,7 @@ import { STATIC_RESOURCE_DESCRIPTORS, readSessionsList, readSessionDetail, readC
 import { PROMPT_DESCRIPTORS, findPrompt } from './prompts.js';
 import { listSessions } from './sessionStorage.js';
 const SERVER_NAME = 'vibe-coding-mcp';
-const SERVER_VERSION = '2.15.0';
+const SERVER_VERSION = '2.15.2';
 /**
  * Build a new `McpServer` instance populated with all 17 tools, the resource
  * set, and the prompt set. The returned server is not yet connected to a

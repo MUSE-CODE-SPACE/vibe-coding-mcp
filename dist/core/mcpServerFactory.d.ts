@@ -13,7 +13,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 declare const SERVER_NAME = "vibe-coding-mcp";
-declare const SERVER_VERSION = "2.15.0";
+declare const SERVER_VERSION = "2.15.2";
 /**
  * Build a new `McpServer` instance populated with all 17 tools, the resource
  * set, and the prompt set. The returned server is not yet connected to a

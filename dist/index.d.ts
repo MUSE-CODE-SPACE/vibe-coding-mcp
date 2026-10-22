@@ -11,5 +11,5 @@
  * replaced with `StreamableHTTPServerTransport`. The SSE GET endpoint is
  * preserved as a compatibility shim that points clients at `/mcp`.
  */
-import 'dotenv/config';
+export {};
 //# sourceMappingURL=index.d.ts.map

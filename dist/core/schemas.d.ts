@@ -8,42 +8,22 @@ export declare const CodeBlockSchema: z.ZodObject<{
     code: z.ZodString;
     filename: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    language: string;
-    code: string;
-    description?: string | undefined;
-    filename?: string | undefined;
-}, {
-    code: string;
-    description?: string | undefined;
-    language?: string | undefined;
-    filename?: string | undefined;
-}>;
+}, z.core.$strip>;
 export declare const DesignDecisionSchema: z.ZodObject<{
     id: z.ZodString;
     title: z.ZodString;
     description: z.ZodString;
     rationale: z.ZodString;
-    alternatives: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    category: z.ZodDefault<z.ZodEnum<["architecture", "library", "pattern", "implementation", "other"]>>;
+    alternatives: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    category: z.ZodDefault<z.ZodEnum<{
+        architecture: "architecture";
+        implementation: "implementation";
+        library: "library";
+        pattern: "pattern";
+        other: "other";
+    }>>;
     timestamp: z.ZodDefault<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    description: string;
-    id: string;
-    title: string;
-    category: "architecture" | "implementation" | "library" | "pattern" | "other";
-    timestamp: string;
-    rationale: string;
-    alternatives?: string[] | undefined;
-}, {
-    description: string;
-    id: string;
-    title: string;
-    rationale: string;
-    category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
-    timestamp?: string | undefined;
-    alternatives?: string[] | undefined;
-}>;
+}, z.core.$strip>;
 export declare const CodeContextSchema: z.ZodObject<{
     sessionId: z.ZodString;
     timestamp: z.ZodString;
@@ -52,191 +32,93 @@ export declare const CodeContextSchema: z.ZodObject<{
         code: z.ZodString;
         filename: z.ZodOptional<z.ZodString>;
         description: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        language: string;
-        code: string;
-        description?: string | undefined;
-        filename?: string | undefined;
-    }, {
-        code: string;
-        description?: string | undefined;
-        language?: string | undefined;
-        filename?: string | undefined;
-    }>, "many">;
+    }, z.core.$strip>>;
     conversationSummary: z.ZodString;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    sessionId: string;
-    timestamp: string;
-    codeBlocks: {
-        language: string;
-        code: string;
-        description?: string | undefined;
-        filename?: string | undefined;
-    }[];
-    conversationSummary: string;
-    tags?: string[] | undefined;
-}, {
-    sessionId: string;
-    timestamp: string;
-    codeBlocks: {
-        code: string;
-        description?: string | undefined;
-        language?: string | undefined;
-        filename?: string | undefined;
-    }[];
-    conversationSummary: string;
-    tags?: string[] | undefined;
-}>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export declare const SessionLogOptionsSchema: z.ZodObject<{
-    logType: z.ZodDefault<z.ZodEnum<["daily", "session"]>>;
+    logType: z.ZodDefault<z.ZodEnum<{
+        daily: "daily";
+        session: "session";
+    }>>;
     outputPath: z.ZodOptional<z.ZodString>;
-    format: z.ZodDefault<z.ZodOptional<z.ZodEnum<["markdown", "json"]>>>;
-}, "strip", z.ZodTypeAny, {
-    logType: "daily" | "session";
-    format: "markdown" | "json";
-    outputPath?: string | undefined;
-}, {
-    logType?: "daily" | "session" | undefined;
-    outputPath?: string | undefined;
-    format?: "markdown" | "json" | undefined;
-}>;
+    format: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        markdown: "markdown";
+        json: "json";
+    }>>>;
+}, z.core.$strip>;
 export declare const CollectCodeContextSchema: z.ZodObject<{
     codeBlocks: z.ZodOptional<z.ZodArray<z.ZodObject<{
         language: z.ZodDefault<z.ZodString>;
         code: z.ZodString;
         filename: z.ZodOptional<z.ZodString>;
         description: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        language: string;
-        code: string;
-        description?: string | undefined;
-        filename?: string | undefined;
-    }, {
-        code: string;
-        description?: string | undefined;
-        language?: string | undefined;
-        filename?: string | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     rawText: z.ZodOptional<z.ZodString>;
     conversationSummary: z.ZodString;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     autoDetectLanguage: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     removeDuplicates: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     includeStats: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, "strip", z.ZodTypeAny, {
-    conversationSummary: string;
-    autoDetectLanguage: boolean;
-    removeDuplicates: boolean;
-    includeStats: boolean;
-    tags?: string[] | undefined;
-    codeBlocks?: {
-        language: string;
-        code: string;
-        description?: string | undefined;
-        filename?: string | undefined;
-    }[] | undefined;
-    rawText?: string | undefined;
-}, {
-    conversationSummary: string;
-    tags?: string[] | undefined;
-    codeBlocks?: {
-        code: string;
-        description?: string | undefined;
-        language?: string | undefined;
-        filename?: string | undefined;
-    }[] | undefined;
-    rawText?: string | undefined;
-    autoDetectLanguage?: boolean | undefined;
-    removeDuplicates?: boolean | undefined;
-    includeStats?: boolean | undefined;
-}>;
+}, z.core.$strip>;
 export declare const SummarizeDesignDecisionsSchema: z.ZodObject<{
     conversationLog: z.ZodString;
     projectContext: z.ZodOptional<z.ZodString>;
-    language: z.ZodDefault<z.ZodOptional<z.ZodEnum<["en", "ko", "auto"]>>>;
+    language: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        ko: "ko";
+        en: "en";
+        auto: "auto";
+    }>>>;
     includeImportanceScore: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     extractRelatedCode: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     maxDecisions: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     useAI: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, "strip", z.ZodTypeAny, {
-    language: "ko" | "en" | "auto";
-    maxDecisions: number;
-    conversationLog: string;
-    includeImportanceScore: boolean;
-    extractRelatedCode: boolean;
-    useAI: boolean;
-    projectContext?: string | undefined;
-}, {
-    conversationLog: string;
-    projectContext?: string | undefined;
-    language?: "ko" | "en" | "auto" | undefined;
-    maxDecisions?: number | undefined;
-    includeImportanceScore?: boolean | undefined;
-    extractRelatedCode?: boolean | undefined;
-    useAI?: boolean | undefined;
-}>;
+}, z.core.$strip>;
 export declare const GenerateDevDocumentSchema: z.ZodObject<{
-    documentType: z.ZodEnum<["README", "DESIGN", "TUTORIAL", "CHANGELOG", "API", "ARCHITECTURE"]>;
+    documentType: z.ZodEnum<{
+        README: "README";
+        DESIGN: "DESIGN";
+        TUTORIAL: "TUTORIAL";
+        CHANGELOG: "CHANGELOG";
+        API: "API";
+        ARCHITECTURE: "ARCHITECTURE";
+    }>;
     title: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodString>;
     projectName: z.ZodOptional<z.ZodString>;
     author: z.ZodOptional<z.ZodString>;
     version: z.ZodOptional<z.ZodString>;
     license: z.ZodOptional<z.ZodString>;
-    language: z.ZodDefault<z.ZodOptional<z.ZodEnum<["en", "ko"]>>>;
-    features: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    language: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        ko: "ko";
+        en: "en";
+    }>>>;
+    features: z.ZodOptional<z.ZodArray<z.ZodString>>;
     installation: z.ZodOptional<z.ZodObject<{
-        requirements: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-        steps: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        requirements?: string[] | undefined;
-        steps?: string[] | undefined;
-    }, {
-        requirements?: string[] | undefined;
-        steps?: string[] | undefined;
-    }>>;
+        requirements: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        steps: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>;
     apiReference: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodString;
         description: z.ZodString;
-        params: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        params: z.ZodOptional<z.ZodArray<z.ZodString>>;
         returns: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        description: string;
-        name: string;
-        params?: string[] | undefined;
-        returns?: string | undefined;
-    }, {
-        description: string;
-        name: string;
-        params?: string[] | undefined;
-        returns?: string | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     designDecisions: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         title: z.ZodString;
         description: z.ZodString;
         rationale: z.ZodString;
-        alternatives: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-        category: z.ZodDefault<z.ZodEnum<["architecture", "library", "pattern", "implementation", "other"]>>;
+        alternatives: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        category: z.ZodDefault<z.ZodEnum<{
+            architecture: "architecture";
+            implementation: "implementation";
+            library: "library";
+            pattern: "pattern";
+            other: "other";
+        }>>;
         timestamp: z.ZodDefault<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        description: string;
-        id: string;
-        title: string;
-        category: "architecture" | "implementation" | "library" | "pattern" | "other";
-        timestamp: string;
-        rationale: string;
-        alternatives?: string[] | undefined;
-    }, {
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
-        timestamp?: string | undefined;
-        alternatives?: string[] | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     codeContexts: z.ZodOptional<z.ZodArray<z.ZodObject<{
         sessionId: z.ZodString;
         timestamp: z.ZodString;
@@ -245,261 +127,56 @@ export declare const GenerateDevDocumentSchema: z.ZodObject<{
             code: z.ZodString;
             filename: z.ZodOptional<z.ZodString>;
             description: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            language: string;
-            code: string;
-            description?: string | undefined;
-            filename?: string | undefined;
-        }, {
-            code: string;
-            description?: string | undefined;
-            language?: string | undefined;
-            filename?: string | undefined;
-        }>, "many">;
+        }, z.core.$strip>>;
         conversationSummary: z.ZodString;
-        tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            description?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }, {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            code: string;
-            description?: string | undefined;
-            language?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }>, "many">>;
+        tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>>;
     changelog: z.ZodOptional<z.ZodArray<z.ZodObject<{
         version: z.ZodString;
         date: z.ZodString;
-        changes: z.ZodArray<z.ZodString, "many">;
-    }, "strip", z.ZodTypeAny, {
-        changes: string[];
-        date: string;
-        version: string;
-    }, {
-        changes: string[];
-        date: string;
-        version: string;
-    }>, "many">>;
+        changes: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>>;
     includeTableOfContents: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     faq: z.ZodOptional<z.ZodArray<z.ZodObject<{
         question: z.ZodString;
         answer: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        question: string;
-        answer: string;
-    }, {
-        question: string;
-        answer: string;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     contributors: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodString;
         role: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        role?: string | undefined;
-    }, {
-        name: string;
-        role?: string | undefined;
-    }>, "many">>;
-}, "strip", z.ZodTypeAny, {
-    language: "ko" | "en";
-    documentType: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE";
-    includeTableOfContents: boolean;
-    description?: string | undefined;
-    title?: string | undefined;
-    codeContexts?: {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            description?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        category: "architecture" | "implementation" | "library" | "pattern" | "other";
-        timestamp: string;
-        rationale: string;
-        alternatives?: string[] | undefined;
-    }[] | undefined;
-    projectName?: string | undefined;
-    author?: string | undefined;
-    version?: string | undefined;
-    license?: string | undefined;
-    features?: string[] | undefined;
-    installation?: {
-        requirements?: string[] | undefined;
-        steps?: string[] | undefined;
-    } | undefined;
-    apiReference?: {
-        description: string;
-        name: string;
-        params?: string[] | undefined;
-        returns?: string | undefined;
-    }[] | undefined;
-    changelog?: {
-        changes: string[];
-        date: string;
-        version: string;
-    }[] | undefined;
-    faq?: {
-        question: string;
-        answer: string;
-    }[] | undefined;
-    contributors?: {
-        name: string;
-        role?: string | undefined;
-    }[] | undefined;
-}, {
-    documentType: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE";
-    description?: string | undefined;
-    title?: string | undefined;
-    codeContexts?: {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            code: string;
-            description?: string | undefined;
-            language?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
-        timestamp?: string | undefined;
-        alternatives?: string[] | undefined;
-    }[] | undefined;
-    language?: "ko" | "en" | undefined;
-    projectName?: string | undefined;
-    author?: string | undefined;
-    version?: string | undefined;
-    license?: string | undefined;
-    features?: string[] | undefined;
-    installation?: {
-        requirements?: string[] | undefined;
-        steps?: string[] | undefined;
-    } | undefined;
-    apiReference?: {
-        description: string;
-        name: string;
-        params?: string[] | undefined;
-        returns?: string | undefined;
-    }[] | undefined;
-    changelog?: {
-        changes: string[];
-        date: string;
-        version: string;
-    }[] | undefined;
-    includeTableOfContents?: boolean | undefined;
-    faq?: {
-        question: string;
-        answer: string;
-    }[] | undefined;
-    contributors?: {
-        name: string;
-        role?: string | undefined;
-    }[] | undefined;
-}>;
+    }, z.core.$strip>>>;
+}, z.core.$strip>;
 export declare const NormalizeForPlatformSchema: z.ZodObject<{
     document: z.ZodString;
-    platform: z.ZodEnum<["notion", "github-wiki", "obsidian"]>;
+    platform: z.ZodEnum<{
+        notion: "notion";
+        "github-wiki": "github-wiki";
+        obsidian: "obsidian";
+    }>;
     options: z.ZodOptional<z.ZodObject<{
         addFrontmatter: z.ZodOptional<z.ZodBoolean>;
         addTimestamp: z.ZodOptional<z.ZodBoolean>;
         customMetadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodString>>;
-    }, "strip", z.ZodTypeAny, {
-        addFrontmatter?: boolean | undefined;
-        addTimestamp?: boolean | undefined;
-        customMetadata?: Record<string, string> | undefined;
-    }, {
-        addFrontmatter?: boolean | undefined;
-        addTimestamp?: boolean | undefined;
-        customMetadata?: Record<string, string> | undefined;
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    platform: "notion" | "github-wiki" | "obsidian";
-    document: string;
-    options?: {
-        addFrontmatter?: boolean | undefined;
-        addTimestamp?: boolean | undefined;
-        customMetadata?: Record<string, string> | undefined;
-    } | undefined;
-}, {
-    platform: "notion" | "github-wiki" | "obsidian";
-    document: string;
-    options?: {
-        addFrontmatter?: boolean | undefined;
-        addTimestamp?: boolean | undefined;
-        customMetadata?: Record<string, string> | undefined;
-    } | undefined;
-}>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const PublishDocumentSchema: z.ZodObject<{
     document: z.ZodString;
-    platform: z.ZodEnum<["notion", "github-wiki", "obsidian", "confluence", "slack", "discord"]>;
+    platform: z.ZodEnum<{
+        notion: "notion";
+        "github-wiki": "github-wiki";
+        obsidian: "obsidian";
+        confluence: "confluence";
+        slack: "slack";
+        discord: "discord";
+    }>;
     title: z.ZodString;
     options: z.ZodOptional<z.ZodObject<{
         filename: z.ZodOptional<z.ZodString>;
         wikiPath: z.ZodOptional<z.ZodString>;
         vaultPath: z.ZodOptional<z.ZodString>;
-        tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        tags?: string[] | undefined;
-        filename?: string | undefined;
-        wikiPath?: string | undefined;
-        vaultPath?: string | undefined;
-    }, {
-        tags?: string[] | undefined;
-        filename?: string | undefined;
-        wikiPath?: string | undefined;
-        vaultPath?: string | undefined;
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    platform: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord";
-    title: string;
-    document: string;
-    options?: {
-        tags?: string[] | undefined;
-        filename?: string | undefined;
-        wikiPath?: string | undefined;
-        vaultPath?: string | undefined;
-    } | undefined;
-}, {
-    platform: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord";
-    title: string;
-    document: string;
-    options?: {
-        tags?: string[] | undefined;
-        filename?: string | undefined;
-        wikiPath?: string | undefined;
-        vaultPath?: string | undefined;
-    } | undefined;
-}>;
+        tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const CreateSessionLogSchema: z.ZodObject<{
     title: z.ZodString;
     summary: z.ZodString;
@@ -511,200 +188,88 @@ export declare const CreateSessionLogSchema: z.ZodObject<{
             code: z.ZodString;
             filename: z.ZodOptional<z.ZodString>;
             description: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            language: string;
-            code: string;
-            description?: string | undefined;
-            filename?: string | undefined;
-        }, {
-            code: string;
-            description?: string | undefined;
-            language?: string | undefined;
-            filename?: string | undefined;
-        }>, "many">;
+        }, z.core.$strip>>;
         conversationSummary: z.ZodString;
-        tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            description?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }, {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            code: string;
-            description?: string | undefined;
-            language?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }>, "many">>;
+        tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>>;
     designDecisions: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         title: z.ZodString;
         description: z.ZodString;
         rationale: z.ZodString;
-        alternatives: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-        category: z.ZodDefault<z.ZodEnum<["architecture", "library", "pattern", "implementation", "other"]>>;
+        alternatives: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        category: z.ZodDefault<z.ZodEnum<{
+            architecture: "architecture";
+            implementation: "implementation";
+            library: "library";
+            pattern: "pattern";
+            other: "other";
+        }>>;
         timestamp: z.ZodDefault<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        description: string;
-        id: string;
-        title: string;
-        category: "architecture" | "implementation" | "library" | "pattern" | "other";
-        timestamp: string;
-        rationale: string;
-        alternatives?: string[] | undefined;
-    }, {
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
-        timestamp?: string | undefined;
-        alternatives?: string[] | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     duration: z.ZodOptional<z.ZodNumber>;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     options: z.ZodOptional<z.ZodObject<{
-        logType: z.ZodDefault<z.ZodEnum<["daily", "session"]>>;
+        logType: z.ZodDefault<z.ZodEnum<{
+            daily: "daily";
+            session: "session";
+        }>>;
         outputPath: z.ZodOptional<z.ZodString>;
-        format: z.ZodDefault<z.ZodOptional<z.ZodEnum<["markdown", "json"]>>>;
-    }, "strip", z.ZodTypeAny, {
-        logType: "daily" | "session";
-        format: "markdown" | "json";
-        outputPath?: string | undefined;
-    }, {
-        logType?: "daily" | "session" | undefined;
-        outputPath?: string | undefined;
-        format?: "markdown" | "json" | undefined;
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    title: string;
-    summary: string;
-    duration?: number | undefined;
-    tags?: string[] | undefined;
-    codeContexts?: {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            description?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        category: "architecture" | "implementation" | "library" | "pattern" | "other";
-        timestamp: string;
-        rationale: string;
-        alternatives?: string[] | undefined;
-    }[] | undefined;
-    options?: {
-        logType: "daily" | "session";
-        format: "markdown" | "json";
-        outputPath?: string | undefined;
-    } | undefined;
-}, {
-    title: string;
-    summary: string;
-    duration?: number | undefined;
-    tags?: string[] | undefined;
-    codeContexts?: {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            code: string;
-            description?: string | undefined;
-            language?: string | undefined;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-        tags?: string[] | undefined;
-    }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        rationale: string;
-        category?: "architecture" | "implementation" | "library" | "pattern" | "other" | undefined;
-        timestamp?: string | undefined;
-        alternatives?: string[] | undefined;
-    }[] | undefined;
-    options?: {
-        logType?: "daily" | "session" | undefined;
-        outputPath?: string | undefined;
-        format?: "markdown" | "json" | undefined;
-    } | undefined;
-}>;
+        format: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+            markdown: "markdown";
+            json: "json";
+        }>>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const AnalyzeCodeSchema: z.ZodObject<{
     code: z.ZodString;
-    language: z.ZodOptional<z.ZodEnum<["typescript", "javascript", "python", "go"]>>;
+    language: z.ZodOptional<z.ZodEnum<{
+        typescript: "typescript";
+        javascript: "javascript";
+        python: "python";
+        go: "go";
+    }>>;
     filename: z.ZodOptional<z.ZodString>;
     generateDiagrams: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-    diagramTypes: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodEnum<["class", "flowchart", "dependency", "all"]>, "many">>>;
+    diagramTypes: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodEnum<{
+        all: "all";
+        class: "class";
+        dependency: "dependency";
+        flowchart: "flowchart";
+    }>>>>;
     useAI: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, "strip", z.ZodTypeAny, {
-    code: string;
-    useAI: boolean;
-    generateDiagrams: boolean;
-    diagramTypes: ("all" | "class" | "dependency" | "flowchart")[];
-    language?: "typescript" | "javascript" | "python" | "go" | undefined;
-    filename?: string | undefined;
-}, {
-    code: string;
-    language?: "typescript" | "javascript" | "python" | "go" | undefined;
-    filename?: string | undefined;
-    useAI?: boolean | undefined;
-    generateDiagrams?: boolean | undefined;
-    diagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
-}>;
+}, z.core.$strip>;
 export declare const ExportSessionSchema: z.ZodObject<{
-    sessionIds: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    format: z.ZodEnum<["markdown", "json", "html"]>;
+    sessionIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    format: z.ZodEnum<{
+        html: "html";
+        markdown: "markdown";
+        json: "json";
+    }>;
     outputPath: z.ZodOptional<z.ZodString>;
     includeMetadata: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     includeCodeBlocks: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     includeDesignDecisions: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-    template: z.ZodDefault<z.ZodOptional<z.ZodEnum<["default", "minimal", "detailed", "report"]>>>;
+    template: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        default: "default";
+        minimal: "minimal";
+        detailed: "detailed";
+        report: "report";
+    }>>>;
     title: z.ZodOptional<z.ZodString>;
     bundleMultiple: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, "strip", z.ZodTypeAny, {
-    format: "html" | "markdown" | "json";
-    includeMetadata: boolean;
-    includeCodeBlocks: boolean;
-    includeDesignDecisions: boolean;
-    template: "default" | "minimal" | "detailed" | "report";
-    bundleMultiple: boolean;
-    title?: string | undefined;
-    outputPath?: string | undefined;
-    sessionIds?: string[] | undefined;
-}, {
-    format: "html" | "markdown" | "json";
-    title?: string | undefined;
-    outputPath?: string | undefined;
-    sessionIds?: string[] | undefined;
-    includeMetadata?: boolean | undefined;
-    includeCodeBlocks?: boolean | undefined;
-    includeDesignDecisions?: boolean | undefined;
-    template?: "default" | "minimal" | "detailed" | "report" | undefined;
-    bundleMultiple?: boolean | undefined;
-}>;
+}, z.core.$strip>;
 export declare const ProjectProfileSchema: z.ZodObject<{
-    action: z.ZodEnum<["create", "get", "update", "delete", "list", "setActive", "getActive", "clone"]>;
+    action: z.ZodEnum<{
+        create: "create";
+        get: "get";
+        update: "update";
+        delete: "delete";
+        list: "list";
+        setActive: "setActive";
+        getActive: "getActive";
+        clone: "clone";
+    }>;
     profileId: z.ZodOptional<z.ZodString>;
     name: z.ZodOptional<z.ZodString>;
     newName: z.ZodOptional<z.ZodString>;
@@ -713,196 +278,90 @@ export declare const ProjectProfileSchema: z.ZodObject<{
     repository: z.ZodOptional<z.ZodString>;
     version: z.ZodOptional<z.ZodString>;
     publishing: z.ZodOptional<z.ZodObject<{
-        defaultPlatform: z.ZodOptional<z.ZodEnum<["notion", "github-wiki", "obsidian", "confluence", "slack", "discord"]>>;
+        defaultPlatform: z.ZodOptional<z.ZodEnum<{
+            notion: "notion";
+            "github-wiki": "github-wiki";
+            obsidian: "obsidian";
+            confluence: "confluence";
+            slack: "slack";
+            discord: "discord";
+        }>>;
         platformSettings: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         autoPublish: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        defaultPlatform?: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord" | undefined;
-        platformSettings?: Record<string, unknown> | undefined;
-        autoPublish?: boolean | undefined;
-    }, {
-        defaultPlatform?: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord" | undefined;
-        platformSettings?: Record<string, unknown> | undefined;
-        autoPublish?: boolean | undefined;
-    }>>;
+    }, z.core.$strip>>;
     codeAnalysis: z.ZodOptional<z.ZodObject<{
-        defaultLanguage: z.ZodOptional<z.ZodEnum<["typescript", "javascript", "python", "go"]>>;
-        defaultDiagramTypes: z.ZodOptional<z.ZodArray<z.ZodEnum<["class", "flowchart", "dependency", "all"]>, "many">>;
-        excludePatterns: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        defaultLanguage: z.ZodOptional<z.ZodEnum<{
+            typescript: "typescript";
+            javascript: "javascript";
+            python: "python";
+            go: "go";
+        }>>;
+        defaultDiagramTypes: z.ZodOptional<z.ZodArray<z.ZodEnum<{
+            all: "all";
+            class: "class";
+            dependency: "dependency";
+            flowchart: "flowchart";
+        }>>>;
+        excludePatterns: z.ZodOptional<z.ZodArray<z.ZodString>>;
         useAI: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        useAI?: boolean | undefined;
-        defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
-        excludePatterns?: string[] | undefined;
-    }, {
-        useAI?: boolean | undefined;
-        defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
-        excludePatterns?: string[] | undefined;
-    }>>;
+    }, z.core.$strip>>;
     documentation: z.ZodOptional<z.ZodObject<{
-        defaultDocType: z.ZodOptional<z.ZodEnum<["README", "DESIGN", "TUTORIAL", "CHANGELOG", "API", "ARCHITECTURE"]>>;
-        language: z.ZodOptional<z.ZodEnum<["en", "ko"]>>;
+        defaultDocType: z.ZodOptional<z.ZodEnum<{
+            README: "README";
+            DESIGN: "DESIGN";
+            TUTORIAL: "TUTORIAL";
+            CHANGELOG: "CHANGELOG";
+            API: "API";
+            ARCHITECTURE: "ARCHITECTURE";
+        }>>;
+        language: z.ZodOptional<z.ZodEnum<{
+            ko: "ko";
+            en: "en";
+        }>>;
         author: z.ZodOptional<z.ZodString>;
         license: z.ZodOptional<z.ZodString>;
         includeTableOfContents: z.ZodOptional<z.ZodBoolean>;
-    }, "strip", z.ZodTypeAny, {
-        language?: "ko" | "en" | undefined;
-        author?: string | undefined;
-        license?: string | undefined;
-        includeTableOfContents?: boolean | undefined;
-        defaultDocType?: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE" | undefined;
-    }, {
-        language?: "ko" | "en" | undefined;
-        author?: string | undefined;
-        license?: string | undefined;
-        includeTableOfContents?: boolean | undefined;
-        defaultDocType?: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE" | undefined;
-    }>>;
-    defaultTags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    }, z.core.$strip>>;
+    defaultTags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     tagCategories: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodString;
-        tags: z.ZodArray<z.ZodString, "many">;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        tags: string[];
-    }, {
-        name: string;
-        tags: string[];
-    }>, "many">>;
+        tags: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>>;
     team: z.ZodOptional<z.ZodObject<{
         name: z.ZodString;
         members: z.ZodOptional<z.ZodArray<z.ZodObject<{
             name: z.ZodString;
             role: z.ZodOptional<z.ZodString>;
             email: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            name: string;
-            role?: string | undefined;
-            email?: string | undefined;
-        }, {
-            name: string;
-            role?: string | undefined;
-            email?: string | undefined;
-        }>, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        members?: {
-            name: string;
-            role?: string | undefined;
-            email?: string | undefined;
-        }[] | undefined;
-    }, {
-        name: string;
-        members?: {
-            name: string;
-            role?: string | undefined;
-            email?: string | undefined;
-        }[] | undefined;
-    }>>;
+        }, z.core.$strip>>>;
+    }, z.core.$strip>>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     limit: z.ZodOptional<z.ZodNumber>;
     offset: z.ZodOptional<z.ZodNumber>;
-    sortBy: z.ZodOptional<z.ZodEnum<["createdAt", "updatedAt", "name"]>>;
-    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
-}, "strip", z.ZodTypeAny, {
-    action: "create" | "get" | "update" | "delete" | "list" | "setActive" | "getActive" | "clone";
-    description?: string | undefined;
-    name?: string | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    repository?: string | undefined;
-    version?: string | undefined;
-    profileId?: string | undefined;
-    newName?: string | undefined;
-    projectPath?: string | undefined;
-    publishing?: {
-        defaultPlatform?: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord" | undefined;
-        platformSettings?: Record<string, unknown> | undefined;
-        autoPublish?: boolean | undefined;
-    } | undefined;
-    codeAnalysis?: {
-        useAI?: boolean | undefined;
-        defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
-        excludePatterns?: string[] | undefined;
-    } | undefined;
-    documentation?: {
-        language?: "ko" | "en" | undefined;
-        author?: string | undefined;
-        license?: string | undefined;
-        includeTableOfContents?: boolean | undefined;
-        defaultDocType?: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE" | undefined;
-    } | undefined;
-    defaultTags?: string[] | undefined;
-    tagCategories?: {
-        name: string;
-        tags: string[];
-    }[] | undefined;
-    team?: {
-        name: string;
-        members?: {
-            name: string;
-            role?: string | undefined;
-            email?: string | undefined;
-        }[] | undefined;
-    } | undefined;
-}, {
-    action: "create" | "get" | "update" | "delete" | "list" | "setActive" | "getActive" | "clone";
-    description?: string | undefined;
-    name?: string | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    sortBy?: "name" | "createdAt" | "updatedAt" | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    repository?: string | undefined;
-    version?: string | undefined;
-    profileId?: string | undefined;
-    newName?: string | undefined;
-    projectPath?: string | undefined;
-    publishing?: {
-        defaultPlatform?: "notion" | "github-wiki" | "obsidian" | "confluence" | "slack" | "discord" | undefined;
-        platformSettings?: Record<string, unknown> | undefined;
-        autoPublish?: boolean | undefined;
-    } | undefined;
-    codeAnalysis?: {
-        useAI?: boolean | undefined;
-        defaultLanguage?: "typescript" | "javascript" | "python" | "go" | undefined;
-        defaultDiagramTypes?: ("all" | "class" | "dependency" | "flowchart")[] | undefined;
-        excludePatterns?: string[] | undefined;
-    } | undefined;
-    documentation?: {
-        language?: "ko" | "en" | undefined;
-        author?: string | undefined;
-        license?: string | undefined;
-        includeTableOfContents?: boolean | undefined;
-        defaultDocType?: "README" | "DESIGN" | "TUTORIAL" | "CHANGELOG" | "API" | "ARCHITECTURE" | undefined;
-    } | undefined;
-    defaultTags?: string[] | undefined;
-    tagCategories?: {
-        name: string;
-        tags: string[];
-    }[] | undefined;
-    team?: {
-        name: string;
-        members?: {
-            name: string;
-            role?: string | undefined;
-            email?: string | undefined;
-        }[] | undefined;
-    } | undefined;
-}>;
+    sortBy: z.ZodOptional<z.ZodEnum<{
+        name: "name";
+        createdAt: "createdAt";
+        updatedAt: "updatedAt";
+    }>>;
+    sortOrder: z.ZodOptional<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+}, z.core.$strip>;
 export declare const SessionHistorySchema: z.ZodObject<{
-    action: z.ZodEnum<["save", "get", "update", "delete", "list", "search", "stats"]>;
+    action: z.ZodEnum<{
+        search: "search";
+        stats: "stats";
+        get: "get";
+        update: "update";
+        delete: "delete";
+        list: "list";
+        save: "save";
+    }>;
     sessionId: z.ZodOptional<z.ZodString>;
     title: z.ZodOptional<z.ZodString>;
     summary: z.ZodOptional<z.ZodString>;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     codeContexts: z.ZodOptional<z.ZodArray<z.ZodObject<{
         sessionId: z.ZodString;
         timestamp: z.ZodString;
@@ -910,35 +369,9 @@ export declare const SessionHistorySchema: z.ZodObject<{
             language: z.ZodString;
             code: z.ZodString;
             filename: z.ZodOptional<z.ZodString>;
-        }, "strip", z.ZodTypeAny, {
-            language: string;
-            code: string;
-            filename?: string | undefined;
-        }, {
-            language: string;
-            code: string;
-            filename?: string | undefined;
-        }>, "many">;
+        }, z.core.$strip>>;
         conversationSummary: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-    }, {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     designDecisions: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         title: z.ZodString;
@@ -946,127 +379,65 @@ export declare const SessionHistorySchema: z.ZodObject<{
         rationale: z.ZodString;
         category: z.ZodString;
         timestamp: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        description: string;
-        id: string;
-        title: string;
-        category: string;
-        timestamp: string;
-        rationale: string;
-    }, {
-        description: string;
-        id: string;
-        title: string;
-        category: string;
-        timestamp: string;
-        rationale: string;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     limit: z.ZodOptional<z.ZodNumber>;
     offset: z.ZodOptional<z.ZodNumber>;
-    filterTags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    sortBy: z.ZodOptional<z.ZodEnum<["createdAt", "updatedAt", "title"]>>;
-    sortOrder: z.ZodOptional<z.ZodEnum<["asc", "desc"]>>;
+    filterTags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    sortBy: z.ZodOptional<z.ZodEnum<{
+        createdAt: "createdAt";
+        updatedAt: "updatedAt";
+        title: "title";
+    }>>;
+    sortOrder: z.ZodOptional<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
     keyword: z.ZodOptional<z.ZodString>;
-    searchIn: z.ZodOptional<z.ZodArray<z.ZodEnum<["title", "summary", "tags"]>, "many">>;
-}, "strip", z.ZodTypeAny, {
-    action: "search" | "stats" | "get" | "update" | "delete" | "list" | "save";
-    sessionId?: string | undefined;
-    title?: string | undefined;
-    summary?: string | undefined;
-    tags?: string[] | undefined;
-    codeContexts?: {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-    }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        category: string;
-        timestamp: string;
-        rationale: string;
-    }[] | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    sortBy?: "createdAt" | "updatedAt" | "title" | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    searchIn?: ("title" | "summary" | "tags")[] | undefined;
-    filterTags?: string[] | undefined;
-    keyword?: string | undefined;
-}, {
-    action: "search" | "stats" | "get" | "update" | "delete" | "list" | "save";
-    sessionId?: string | undefined;
-    title?: string | undefined;
-    summary?: string | undefined;
-    tags?: string[] | undefined;
-    codeContexts?: {
-        sessionId: string;
-        timestamp: string;
-        codeBlocks: {
-            language: string;
-            code: string;
-            filename?: string | undefined;
-        }[];
-        conversationSummary: string;
-    }[] | undefined;
-    designDecisions?: {
-        description: string;
-        id: string;
-        title: string;
-        category: string;
-        timestamp: string;
-        rationale: string;
-    }[] | undefined;
-    metadata?: Record<string, unknown> | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    sortBy?: "createdAt" | "updatedAt" | "title" | undefined;
-    sortOrder?: "asc" | "desc" | undefined;
-    searchIn?: ("title" | "summary" | "tags")[] | undefined;
-    filterTags?: string[] | undefined;
-    keyword?: string | undefined;
-}>;
+    searchIn: z.ZodOptional<z.ZodArray<z.ZodEnum<{
+        title: "title";
+        summary: "summary";
+        tags: "tags";
+    }>>>;
+}, z.core.$strip>;
 export declare const SessionStatsSchema: z.ZodObject<{
-    action: z.ZodEnum<["overview", "languages", "timeline", "tags", "productivity", "trends"]>;
+    action: z.ZodEnum<{
+        tags: "tags";
+        overview: "overview";
+        languages: "languages";
+        timeline: "timeline";
+        productivity: "productivity";
+        trends: "trends";
+    }>;
     since: z.ZodOptional<z.ZodString>;
     until: z.ZodOptional<z.ZodString>;
-    period: z.ZodDefault<z.ZodOptional<z.ZodEnum<["day", "week", "month", "year", "all"]>>>;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    languages: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    format: z.ZodDefault<z.ZodOptional<z.ZodEnum<["summary", "detailed", "chart"]>>>;
+    period: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        all: "all";
+        day: "day";
+        week: "week";
+        month: "month";
+        year: "year";
+    }>>>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    languages: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    format: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        summary: "summary";
+        detailed: "detailed";
+        chart: "chart";
+    }>>>;
     includeInsights: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-    compareWith: z.ZodOptional<z.ZodEnum<["previous", "average"]>>;
-}, "strip", z.ZodTypeAny, {
-    format: "summary" | "detailed" | "chart";
-    action: "tags" | "overview" | "languages" | "timeline" | "productivity" | "trends";
-    period: "all" | "day" | "week" | "month" | "year";
-    includeInsights: boolean;
-    tags?: string[] | undefined;
-    until?: string | undefined;
-    languages?: string[] | undefined;
-    since?: string | undefined;
-    compareWith?: "previous" | "average" | undefined;
-}, {
-    action: "tags" | "overview" | "languages" | "timeline" | "productivity" | "trends";
-    tags?: string[] | undefined;
-    until?: string | undefined;
-    format?: "summary" | "detailed" | "chart" | undefined;
-    languages?: string[] | undefined;
-    since?: string | undefined;
-    period?: "all" | "day" | "week" | "month" | "year" | undefined;
-    includeInsights?: boolean | undefined;
-    compareWith?: "previous" | "average" | undefined;
-}>;
+    compareWith: z.ZodOptional<z.ZodEnum<{
+        previous: "previous";
+        average: "average";
+    }>>;
+}, z.core.$strip>;
 export declare const AutoTagSchema: z.ZodObject<{
-    action: z.ZodEnum<["suggest", "apply", "train", "config"]>;
+    action: z.ZodEnum<{
+        suggest: "suggest";
+        apply: "apply";
+        train: "train";
+        config: "config";
+    }>;
     sessionId: z.ZodOptional<z.ZodString>;
     content: z.ZodOptional<z.ZodString>;
     codeBlocks: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -1074,229 +445,115 @@ export declare const AutoTagSchema: z.ZodObject<{
         code: z.ZodString;
         filename: z.ZodOptional<z.ZodString>;
         description: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        language: string;
-        code: string;
-        description?: string | undefined;
-        filename?: string | undefined;
-    }, {
-        code: string;
-        description?: string | undefined;
-        language?: string | undefined;
-        filename?: string | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     maxTags: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     minConfidence: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     includeExisting: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-    categories: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    categories: z.ZodOptional<z.ZodArray<z.ZodString>>;
     examples: z.ZodOptional<z.ZodArray<z.ZodObject<{
         content: z.ZodString;
-        tags: z.ZodArray<z.ZodString, "many">;
-    }, "strip", z.ZodTypeAny, {
-        content: string;
-        tags: string[];
-    }, {
-        content: string;
-        tags: string[];
-    }>, "many">>;
+        tags: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>>;
     enableAutoTag: z.ZodOptional<z.ZodBoolean>;
-    defaultCategories: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    defaultCategories: z.ZodOptional<z.ZodArray<z.ZodString>>;
     customPatterns: z.ZodOptional<z.ZodArray<z.ZodObject<{
         pattern: z.ZodString;
-        tags: z.ZodArray<z.ZodString, "many">;
-    }, "strip", z.ZodTypeAny, {
-        tags: string[];
-        pattern: string;
-    }, {
-        tags: string[];
-        pattern: string;
-    }>, "many">>;
+        tags: z.ZodArray<z.ZodString>;
+    }, z.core.$strip>>>;
     useAI: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, "strip", z.ZodTypeAny, {
-    useAI: boolean;
-    action: "suggest" | "apply" | "train" | "config";
-    maxTags: number;
-    minConfidence: number;
-    includeExisting: boolean;
-    content?: string | undefined;
-    sessionId?: string | undefined;
-    codeBlocks?: {
-        language: string;
-        code: string;
-        description?: string | undefined;
-        filename?: string | undefined;
-    }[] | undefined;
-    categories?: string[] | undefined;
-    examples?: {
-        content: string;
-        tags: string[];
-    }[] | undefined;
-    enableAutoTag?: boolean | undefined;
-    defaultCategories?: string[] | undefined;
-    customPatterns?: {
-        tags: string[];
-        pattern: string;
-    }[] | undefined;
-}, {
-    action: "suggest" | "apply" | "train" | "config";
-    content?: string | undefined;
-    sessionId?: string | undefined;
-    codeBlocks?: {
-        code: string;
-        description?: string | undefined;
-        language?: string | undefined;
-        filename?: string | undefined;
-    }[] | undefined;
-    useAI?: boolean | undefined;
-    maxTags?: number | undefined;
-    minConfidence?: number | undefined;
-    includeExisting?: boolean | undefined;
-    categories?: string[] | undefined;
-    examples?: {
-        content: string;
-        tags: string[];
-    }[] | undefined;
-    enableAutoTag?: boolean | undefined;
-    defaultCategories?: string[] | undefined;
-    customPatterns?: {
-        tags: string[];
-        pattern: string;
-    }[] | undefined;
-}>;
+}, z.core.$strip>;
 export declare const TemplateSchema: z.ZodObject<{
-    action: z.ZodEnum<["create", "get", "update", "delete", "list", "apply", "preview", "import", "export"]>;
+    action: z.ZodEnum<{
+        create: "create";
+        get: "get";
+        update: "update";
+        delete: "delete";
+        list: "list";
+        apply: "apply";
+        preview: "preview";
+        import: "import";
+        export: "export";
+    }>;
     templateId: z.ZodOptional<z.ZodString>;
     name: z.ZodOptional<z.ZodString>;
-    type: z.ZodOptional<z.ZodEnum<["document", "session-log", "export", "report"]>>;
+    type: z.ZodOptional<z.ZodEnum<{
+        document: "document";
+        report: "report";
+        export: "export";
+        "session-log": "session-log";
+    }>>;
     content: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodString>;
     variables: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodString;
-        type: z.ZodEnum<["string", "number", "boolean", "array", "date"]>;
+        type: z.ZodEnum<{
+            string: "string";
+            number: "number";
+            boolean: "boolean";
+            date: "date";
+            array: "array";
+        }>;
         required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
         default: z.ZodOptional<z.ZodUnknown>;
         description: z.ZodOptional<z.ZodString>;
-    }, "strip", z.ZodTypeAny, {
-        name: string;
-        type: "string" | "number" | "boolean" | "date" | "array";
-        required: boolean;
-        description?: string | undefined;
-        default?: unknown;
-    }, {
-        name: string;
-        type: "string" | "number" | "boolean" | "date" | "array";
-        description?: string | undefined;
-        default?: unknown;
-        required?: boolean | undefined;
-    }>, "many">>;
+    }, z.core.$strip>>>;
     data: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
-    format: z.ZodDefault<z.ZodOptional<z.ZodEnum<["json", "yaml"]>>>;
+    format: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        json: "json";
+        yaml: "yaml";
+    }>>>;
     filePath: z.ZodOptional<z.ZodString>;
-    filterType: z.ZodOptional<z.ZodEnum<["document", "session-log", "export", "report"]>>;
+    filterType: z.ZodOptional<z.ZodEnum<{
+        document: "document";
+        report: "report";
+        export: "export";
+        "session-log": "session-log";
+    }>>;
     limit: z.ZodOptional<z.ZodNumber>;
     offset: z.ZodOptional<z.ZodNumber>;
-}, "strip", z.ZodTypeAny, {
-    format: "json" | "yaml";
-    action: "create" | "get" | "update" | "delete" | "list" | "apply" | "preview" | "import" | "export";
-    content?: string | undefined;
-    description?: string | undefined;
-    name?: string | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    type?: "document" | "report" | "export" | "session-log" | undefined;
-    templateId?: string | undefined;
-    variables?: {
-        name: string;
-        type: "string" | "number" | "boolean" | "date" | "array";
-        required: boolean;
-        description?: string | undefined;
-        default?: unknown;
-    }[] | undefined;
-    data?: Record<string, unknown> | undefined;
-    filePath?: string | undefined;
-    filterType?: "document" | "report" | "export" | "session-log" | undefined;
-}, {
-    action: "create" | "get" | "update" | "delete" | "list" | "apply" | "preview" | "import" | "export";
-    content?: string | undefined;
-    description?: string | undefined;
-    name?: string | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-    type?: "document" | "report" | "export" | "session-log" | undefined;
-    format?: "json" | "yaml" | undefined;
-    templateId?: string | undefined;
-    variables?: {
-        name: string;
-        type: "string" | "number" | "boolean" | "date" | "array";
-        description?: string | undefined;
-        default?: unknown;
-        required?: boolean | undefined;
-    }[] | undefined;
-    data?: Record<string, unknown> | undefined;
-    filePath?: string | undefined;
-    filterType?: "document" | "report" | "export" | "session-log" | undefined;
-}>;
+}, z.core.$strip>;
 export declare const BatchSchema: z.ZodObject<{
-    action: z.ZodEnum<["execute", "preview", "status", "cancel", "history"]>;
+    action: z.ZodEnum<{
+        status: "status";
+        preview: "preview";
+        execute: "execute";
+        cancel: "cancel";
+        history: "history";
+    }>;
     operations: z.ZodOptional<z.ZodArray<z.ZodObject<{
         tool: z.ZodString;
         params: z.ZodRecord<z.ZodString, z.ZodUnknown>;
         id: z.ZodOptional<z.ZodString>;
-        dependsOn: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    }, "strip", z.ZodTypeAny, {
-        tool: string;
-        params: Record<string, unknown>;
-        id?: string | undefined;
-        dependsOn?: string[] | undefined;
-    }, {
-        tool: string;
-        params: Record<string, unknown>;
-        id?: string | undefined;
-        dependsOn?: string[] | undefined;
-    }>, "many">>;
-    mode: z.ZodDefault<z.ZodOptional<z.ZodEnum<["sequential", "parallel"]>>>;
+        dependsOn: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>>;
+    mode: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        sequential: "sequential";
+        parallel: "parallel";
+    }>>>;
     stopOnError: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     timeout: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     jobId: z.ZodOptional<z.ZodString>;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-    status: z.ZodOptional<z.ZodEnum<["pending", "running", "completed", "failed", "cancelled"]>>;
+    status: z.ZodOptional<z.ZodEnum<{
+        pending: "pending";
+        running: "running";
+        completed: "completed";
+        failed: "failed";
+        cancelled: "cancelled";
+    }>>;
     includeResults: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     includeErrors: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-}, "strip", z.ZodTypeAny, {
-    limit: number;
-    action: "status" | "preview" | "execute" | "cancel" | "history";
-    mode: "sequential" | "parallel";
-    stopOnError: boolean;
-    timeout: number;
-    includeResults: boolean;
-    includeErrors: boolean;
-    status?: "pending" | "running" | "completed" | "failed" | "cancelled" | undefined;
-    operations?: {
-        tool: string;
-        params: Record<string, unknown>;
-        id?: string | undefined;
-        dependsOn?: string[] | undefined;
-    }[] | undefined;
-    jobId?: string | undefined;
-}, {
-    action: "status" | "preview" | "execute" | "cancel" | "history";
-    limit?: number | undefined;
-    status?: "pending" | "running" | "completed" | "failed" | "cancelled" | undefined;
-    operations?: {
-        tool: string;
-        params: Record<string, unknown>;
-        id?: string | undefined;
-        dependsOn?: string[] | undefined;
-    }[] | undefined;
-    mode?: "sequential" | "parallel" | undefined;
-    stopOnError?: boolean | undefined;
-    timeout?: number | undefined;
-    jobId?: string | undefined;
-    includeResults?: boolean | undefined;
-    includeErrors?: boolean | undefined;
-}>;
+}, z.core.$strip>;
 export declare const GitSchema: z.ZodObject<{
-    action: z.ZodEnum<["status", "log", "diff", "branch", "snapshot", "extractDecisions", "linkToSession"]>;
+    action: z.ZodEnum<{
+        status: "status";
+        log: "log";
+        diff: "diff";
+        branch: "branch";
+        snapshot: "snapshot";
+        extractDecisions: "extractDecisions";
+        linkToSession: "linkToSession";
+    }>;
     repoPath: z.ZodOptional<z.ZodString>;
     includeUntracked: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
@@ -1305,7 +562,11 @@ export declare const GitSchema: z.ZodObject<{
     until: z.ZodOptional<z.ZodString>;
     grep: z.ZodOptional<z.ZodString>;
     oneline: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-    diffType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["staged", "unstaged", "all"]>>>;
+    diffType: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        all: "all";
+        staged: "staged";
+        unstaged: "unstaged";
+    }>>>;
     fromRef: z.ZodOptional<z.ZodString>;
     toRef: z.ZodOptional<z.ZodString>;
     path: z.ZodOptional<z.ZodString>;
@@ -1317,65 +578,24 @@ export declare const GitSchema: z.ZodObject<{
     includeLog: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     logLimit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
     includeStash: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
-    patterns: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    language: z.ZodDefault<z.ZodOptional<z.ZodEnum<["en", "ko", "auto"]>>>;
+    patterns: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    language: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        ko: "ko";
+        en: "en";
+        auto: "auto";
+    }>>>;
     sessionId: z.ZodOptional<z.ZodString>;
-    snapshotType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["minimal", "full"]>>>;
-}, "strip", z.ZodTypeAny, {
-    limit: number;
-    language: "ko" | "en" | "auto";
-    action: "status" | "log" | "diff" | "branch" | "snapshot" | "extractDecisions" | "linkToSession";
-    includeUntracked: boolean;
-    oneline: boolean;
-    diffType: "all" | "staged" | "unstaged";
-    contextLines: number;
-    stat: boolean;
-    includeRemote: boolean;
-    verbose: boolean;
-    includeDiff: boolean;
-    includeLog: boolean;
-    logLimit: number;
-    includeStash: boolean;
-    snapshotType: "minimal" | "full";
-    sessionId?: string | undefined;
-    path?: string | undefined;
-    until?: string | undefined;
-    author?: string | undefined;
-    since?: string | undefined;
-    repoPath?: string | undefined;
-    grep?: string | undefined;
-    fromRef?: string | undefined;
-    toRef?: string | undefined;
-    patterns?: string[] | undefined;
-}, {
-    action: "status" | "log" | "diff" | "branch" | "snapshot" | "extractDecisions" | "linkToSession";
-    sessionId?: string | undefined;
-    path?: string | undefined;
-    limit?: number | undefined;
-    language?: "ko" | "en" | "auto" | undefined;
-    until?: string | undefined;
-    author?: string | undefined;
-    since?: string | undefined;
-    repoPath?: string | undefined;
-    includeUntracked?: boolean | undefined;
-    grep?: string | undefined;
-    oneline?: boolean | undefined;
-    diffType?: "all" | "staged" | "unstaged" | undefined;
-    fromRef?: string | undefined;
-    toRef?: string | undefined;
-    contextLines?: number | undefined;
-    stat?: boolean | undefined;
-    includeRemote?: boolean | undefined;
-    verbose?: boolean | undefined;
-    includeDiff?: boolean | undefined;
-    includeLog?: boolean | undefined;
-    logLimit?: number | undefined;
-    includeStash?: boolean | undefined;
-    patterns?: string[] | undefined;
-    snapshotType?: "minimal" | "full" | undefined;
-}>;
+    snapshotType: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        minimal: "minimal";
+        full: "full";
+    }>>>;
+}, z.core.$strip>;
 export declare const CaptureTranscriptSchema: z.ZodObject<{
-    action: z.ZodDefault<z.ZodOptional<z.ZodEnum<["capture", "preview", "list"]>>>;
+    action: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        list: "list";
+        preview: "preview";
+        capture: "capture";
+    }>>>;
     transcriptPath: z.ZodOptional<z.ZodString>;
     cwd: z.ZodOptional<z.ZodString>;
     all: z.ZodOptional<z.ZodBoolean>;
@@ -1383,71 +603,41 @@ export declare const CaptureTranscriptSchema: z.ZodObject<{
     minPrompts: z.ZodOptional<z.ZodNumber>;
     maxFiles: z.ZodOptional<z.ZodNumber>;
     maxDecisions: z.ZodOptional<z.ZodNumber>;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-}, "strip", z.ZodTypeAny, {
-    action: "list" | "preview" | "capture";
-    tags?: string[] | undefined;
-    limit?: number | undefined;
-    maxDecisions?: number | undefined;
-    all?: boolean | undefined;
-    cwd?: string | undefined;
-    minPrompts?: number | undefined;
-    maxFiles?: number | undefined;
-    transcriptPath?: string | undefined;
-}, {
-    tags?: string[] | undefined;
-    limit?: number | undefined;
-    maxDecisions?: number | undefined;
-    all?: boolean | undefined;
-    cwd?: string | undefined;
-    minPrompts?: number | undefined;
-    maxFiles?: number | undefined;
-    transcriptPath?: string | undefined;
-    action?: "list" | "preview" | "capture" | undefined;
-}>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export declare const DigestSchema: z.ZodObject<{
-    period: z.ZodOptional<z.ZodEnum<["today", "yesterday", "week", "last-week", "month", "custom"]>>;
+    period: z.ZodOptional<z.ZodEnum<{
+        custom: "custom";
+        week: "week";
+        month: "month";
+        today: "today";
+        yesterday: "yesterday";
+        "last-week": "last-week";
+    }>>;
     since: z.ZodOptional<z.ZodString>;
     until: z.ZodOptional<z.ZodString>;
-    groupBy: z.ZodOptional<z.ZodEnum<["day", "project", "tag", "none"]>>;
-    language: z.ZodOptional<z.ZodEnum<["en", "ko"]>>;
-    format: z.ZodOptional<z.ZodEnum<["markdown", "json"]>>;
-    tags: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    groupBy: z.ZodOptional<z.ZodEnum<{
+        project: "project";
+        day: "day";
+        tag: "tag";
+        none: "none";
+    }>>;
+    language: z.ZodOptional<z.ZodEnum<{
+        ko: "ko";
+        en: "en";
+    }>>;
+    format: z.ZodOptional<z.ZodEnum<{
+        markdown: "markdown";
+        json: "json";
+    }>>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     project: z.ZodOptional<z.ZodString>;
     includeFiles: z.ZodOptional<z.ZodBoolean>;
     includeDecisions: z.ZodOptional<z.ZodBoolean>;
     includePrompts: z.ZodOptional<z.ZodBoolean>;
     maxSessions: z.ZodOptional<z.ZodNumber>;
     title: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    title?: string | undefined;
-    tags?: string[] | undefined;
-    language?: "ko" | "en" | undefined;
-    until?: string | undefined;
-    project?: string | undefined;
-    format?: "markdown" | "json" | undefined;
-    since?: string | undefined;
-    period?: "custom" | "week" | "month" | "today" | "yesterday" | "last-week" | undefined;
-    groupBy?: "project" | "day" | "tag" | "none" | undefined;
-    includeFiles?: boolean | undefined;
-    includeDecisions?: boolean | undefined;
-    includePrompts?: boolean | undefined;
-    maxSessions?: number | undefined;
-}, {
-    title?: string | undefined;
-    tags?: string[] | undefined;
-    language?: "ko" | "en" | undefined;
-    until?: string | undefined;
-    project?: string | undefined;
-    format?: "markdown" | "json" | undefined;
-    since?: string | undefined;
-    period?: "custom" | "week" | "month" | "today" | "yesterday" | "last-week" | undefined;
-    groupBy?: "project" | "day" | "tag" | "none" | undefined;
-    includeFiles?: boolean | undefined;
-    includeDecisions?: boolean | undefined;
-    includePrompts?: boolean | undefined;
-    maxSessions?: number | undefined;
-}>;
+}, z.core.$strip>;
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;
 export type SessionHistoryInput = z.infer<typeof SessionHistorySchema>;
