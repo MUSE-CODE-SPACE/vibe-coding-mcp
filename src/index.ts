@@ -16,7 +16,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+loadEnv({ quiet: true });
 
 import { createMcpServer, getCapabilityCounts, SERVER_NAME, SERVER_VERSION } from './core/mcpServerFactory.js';
 import { getToolNames } from './core/toolRegistry.js';

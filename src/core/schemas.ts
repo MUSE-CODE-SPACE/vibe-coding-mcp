@@ -102,7 +102,7 @@ export const NormalizeForPlatformSchema = z.object({
   options: z.object({
     addFrontmatter: z.boolean().optional(),
     addTimestamp: z.boolean().optional(),
-    customMetadata: z.record(z.string()).optional()
+    customMetadata: z.record(z.string(), z.string()).optional()
   }).optional()
 });
 
@@ -160,7 +160,7 @@ export const ProjectProfileSchema = z.object({
   version: z.string().optional(),
   publishing: z.object({
     defaultPlatform: z.enum(['notion', 'github-wiki', 'obsidian', 'confluence', 'slack', 'discord']).optional(),
-    platformSettings: z.record(z.unknown()).optional(),
+    platformSettings: z.record(z.string(), z.unknown()).optional(),
     autoPublish: z.boolean().optional()
   }).optional(),
   codeAnalysis: z.object({
@@ -189,7 +189,7 @@ export const ProjectProfileSchema = z.object({
       email: z.string().optional()
     })).optional()
   }).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   limit: z.number().optional(),
   offset: z.number().optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'name']).optional(),
@@ -220,7 +220,7 @@ export const SessionHistorySchema = z.object({
     category: z.string(),
     timestamp: z.string()
   })).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   limit: z.number().optional(),
   offset: z.number().optional(),
   filterTags: z.array(z.string()).optional(),
@@ -307,7 +307,7 @@ export const TemplateSchema = z.object({
   })).optional(),
 
   // For apply action
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 
   // For import/export
   format: z.enum(['json', 'yaml']).optional().default('json'),
@@ -326,7 +326,7 @@ export const BatchSchema = z.object({
   // Batch job definition
   operations: z.array(z.object({
     tool: z.string(),
-    params: z.record(z.unknown()),
+    params: z.record(z.string(), z.unknown()),
     id: z.string().optional(),
     dependsOn: z.array(z.string()).optional()
   })).optional(),
@@ -444,7 +444,7 @@ export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);
 
   if (!result.success) {
-    const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+    const errors = result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
     throw new Error(`Validation failed: ${errors}`);
   }
 
