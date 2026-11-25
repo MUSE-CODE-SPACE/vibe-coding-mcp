@@ -60,6 +60,10 @@ Claude Code (full: hook capture + session-start recall + skill + MCP) · Codex C
 2. `/standup` result in Claude Code
 3. `/weekly-report` rendered in Notion
 
+## Status
+Live since 2026-11-25 (free): https://www.agensi.io/skills/vibe-coding-memory-for-your-ai-coding-sessions
+Logo and screenshots are in `docs/assets/`. Listing edits go live immediately; replacing the ZIP needs re-approval.
+
 ## Checklist before submitting
 - [ ] `npm run skill:pack` → upload the zip from `dist-skill/`
 - [ ] npm has the version the skill references (`npm view vibe-coding-mcp version` ≥ 2.16.0)

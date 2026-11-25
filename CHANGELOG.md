@@ -10,6 +10,15 @@ All notable changes to `vibe-coding-mcp` are documented here. Format follows [Ke
 - Git `prepare-commit-msg` integration surfacing decision summaries.
 - Capture for Cursor transcripts.
 
+## [2.16.1] - 2026-11-25
+
+### Fixed
+- **Decision titles were the first three words of the sentence** ("decided use JWT", "chose Redis over"). The pattern extractor now titles a decision with the decision clause itself, without the lead-in and without the justification: "We decided to use JWT instead of server sessions because …" → "Use JWT instead of server sessions". Affects `muse_summarize_design_decisions` (pattern mode), captured sessions, `muse_recall` and `muse_digest`. Sessions already captured keep their old titles until they are captured again.
+- `muse_digest` highlights printed the rationale twice when the decision's description already contained it.
+
+### Added
+- `docs/assets/`: logo (`logo.svg`, `logo.png`) and three screenshots made from sample project data, used by the README and the Agensi listing.
+
 ## [2.16.0] - 2026-11-25
 
 ### Highlights ⭐

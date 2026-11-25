@@ -169,3 +169,26 @@ describe('summarizeDesignDecisions', () => {
     });
   });
 });
+
+describe('generateTitle', () => {
+  // Imported lazily so this block stays independent of the suite's own imports.
+  const load = () => import('../src/tools/summarizeDesignDecisions.js');
+
+  it('keeps the decision clause, drops the lead-in and the justification', async () => {
+    const { generateTitle } = await load();
+    expect(generateTitle('We decided to use JWT instead of server sessions because it keeps the API stateless.', 'architecture')).toBe('Use JWT instead of server sessions');
+    expect(generateTitle('I chose Redis over an in-process cache since three instances must share it', 'library')).toBe('Redis over an in-process cache');
+    expect(generateTitle("So, we'll go with one page per resource, as readers look up one endpoint at a time", 'other')).toBe('One page per resource');
+    expect(generateTitle('Use src/app.ts as the entry point', 'other')).toBe('Use src/app.ts as the entry point');
+  });
+
+  it('handles Korean, long sentences and empty input', async () => {
+    const { generateTitle } = await load();
+    expect(generateTitle('세션 대신 JWT를 사용하기로 결정했습니다 왜냐하면 무상태라서', 'architecture')).toBe('세션 대신 JWT를 사용하기로 결정했습니다');
+    expect(generateTitle('Redis가 더 적합합니다 여러 인스턴스가 공유해야 하니까', 'library')).toBe('Redis가 더 적합합니다 여러 인스턴스가 공유해야 하');
+    const long = generateTitle('We decided to ' + 'split the monolith into services '.repeat(6), 'architecture');
+    expect(long.length).toBeLessThanOrEqual(71);
+    expect(long.endsWith('…')).toBe(true);
+    expect(generateTitle('  ', 'library')).toBe('Library Decision');
+  });
+});

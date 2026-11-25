@@ -30,6 +30,12 @@ export interface SummarizeDesignDecisionsOutput {
     usedAI?: boolean;
 }
 /**
+ * Title for a decision: the decision clause itself, without the lead-in
+ * ("We decided to") and without the justification ("because …").
+ * "We decided to use JWT instead of sessions because …" → "Use JWT instead of sessions".
+ */
+export declare function generateTitle(decision: string, category: string): string;
+/**
  * Analyzes conversation logs to extract and summarize design decisions
  *
  * @param input - The input parameters

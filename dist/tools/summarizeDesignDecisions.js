@@ -147,17 +147,30 @@ function calculateImportance(decision, fullText) {
     return { level, score };
 }
 // 제목 생성
-function generateTitle(decision, category) {
-    // 주요 키워드 추출
-    const keywords = decision
-        .replace(/[^\w\s가-힣]/g, ' ')
-        .split(/\s+/)
-        .filter(word => word.length > 2)
-        .slice(0, 3);
-    if (keywords.length === 0) {
-        return `${category.charAt(0).toUpperCase() + category.slice(1)} Decision`;
+/** Lead-ins that announce a decision without being part of it ("We decided to …"). */
+const TITLE_LEAD_IN = /^(?:(?:so|and|then|ok|okay|well)[,\s]+)?(?:we|i|let's|lets)(?:'ll|'ve|'d|\s+will|\s+have|\s+should)?\s+(?:(?:have|also|just)\s+)*(?:decided|chose|chosen|selected|picked|opted|settled|went|go|recommend)\s+(?:(?:to|for|on|with)\s+)?/i;
+/** Where the decision ends and its justification begins. */
+const TITLE_CUT = /\s+(?:because|since|so that|due to|given that)\b|,\s+(?:as|so|which)\b|[.;:—](?:\s|$)|\s+(?:왜냐하면|이유는)|\s*(?:때문|이라서|라서|니까|이므로|므로)/i;
+/**
+ * Title for a decision: the decision clause itself, without the lead-in
+ * ("We decided to") and without the justification ("because …").
+ * "We decided to use JWT instead of sessions because …" → "Use JWT instead of sessions".
+ */
+export function generateTitle(decision, category) {
+    const fallback = `${category.charAt(0).toUpperCase() + category.slice(1)} Decision`;
+    let title = decision.replace(/\s+/g, ' ').trim();
+    title = title.split(TITLE_CUT)[0].trim();
+    title = title.replace(TITLE_LEAD_IN, '').replace(/^to\s+/i, '').trim();
+    title = title.replace(/^[\s\-*>#`"'(]+|[\s,`"')]+$/g, '');
+    if (title.length < 3)
+        return fallback;
+    const MAX = 70;
+    if (title.length > MAX) {
+        const cut = title.slice(0, MAX);
+        const lastSpace = cut.lastIndexOf(' ');
+        title = (lastSpace > 30 ? cut.slice(0, lastSpace) : cut).replace(/[\s,]+$/, '') + '…';
     }
-    return keywords.join(' ').substring(0, 50);
+    return title.charAt(0).toUpperCase() + title.slice(1);
 }
 // 키워드 추출
 function extractKeywords(text) {

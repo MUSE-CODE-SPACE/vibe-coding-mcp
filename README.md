@@ -1,3 +1,5 @@
+<p align="center"><img src="./docs/assets/logo.png" width="96" alt="vibe-coding-mcp logo"></p>
+
 # vibe-coding-mcp
 
 > Your AI coding sessions, documented automatically. Captures every Claude Code session from its transcript — prompts, files changed, commands, design decisions — then turns them into standups, weekly reports, ADRs and PR descriptions, and publishes them to Notion / Obsidian / GitHub Wiki / Confluence / Slack / Discord.
@@ -50,6 +52,10 @@ Then, inside Claude Code:
 Or just ask: *"why did we choose JWT over sessions last week?"*, *"document yesterday's session as a DESIGN doc and put it in my Obsidian vault"*, *"write the PR description for this refactor"*.
 
 > **Upgrading from v2.14?** The old README's hook recipe used `claude mcp call`, which is not a real Claude Code command, so nothing was ever captured. Run `npx vibe-coding-mcp init` and remove the old entries. See [`docs/AUTO_CAPTURE.md`](./docs/AUTO_CAPTURE.md).
+
+![vibe-coding-mcp recall: project memory for a sample project](./docs/assets/screenshot-recall.png)
+
+<sub>Sample project data. More: [weekly digest](./docs/assets/screenshot-digest.png) · [backfill and search](./docs/assets/screenshot-sync-search.png). The skill is also listed on [Agensi](https://www.agensi.io/skills/vibe-coding-memory-for-your-ai-coding-sessions).</sub>
 
 ## What's new in v2.16.0
 

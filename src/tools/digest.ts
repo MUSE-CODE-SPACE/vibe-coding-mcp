@@ -279,7 +279,10 @@ export function renderDigestMarkdown(
     lines.push(`## ${L.highlights}`);
     lines.push('');
     for (const d of allDecisions.slice(0, 8)) {
-      lines.push(`- **${d.title}** — ${d.description}${d.rationale ? ` _(${d.rationale})_` : ''}`);
+      // The pattern extractor's description is the whole sentence, which usually
+      // already contains the reason; do not print it twice.
+      const repeated = !d.rationale || d.description.toLowerCase().includes(d.rationale.toLowerCase());
+      lines.push(`- **${d.title}** — ${d.description}${repeated ? '' : ` _(${d.rationale})_`}`);
     }
     lines.push('');
   }

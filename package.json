@@ -1,6 +1,6 @@
 {
   "name": "vibe-coding-mcp",
-  "version": "2.16.0",
+  "version": "2.16.1",
   "mcpName": "io.github.MUSE-CODE-SPACE/vibe-coding",
   "description": "Local memory for AI coding sessions: auto-capture Claude Code and Codex CLI transcripts, recall earlier work per project, then digest, document and publish — MCP server + agent skill",
   "main": "dist/index.js",
