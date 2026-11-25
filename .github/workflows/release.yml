@@ -38,7 +38,21 @@ jobs:
         env:
           CI: true
 
+      # A version published by hand (npm publish from a laptop) must not turn
+      # the tag's release run red: publish only when npm does not have it yet.
+      - name: Check whether this version is already on npm
+        id: published
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "vibe-coding-mcp@${VERSION}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "vibe-coding-mcp@${VERSION} is already on npm; skipping publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
+        if: steps.published.outputs.exists == 'false'
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
