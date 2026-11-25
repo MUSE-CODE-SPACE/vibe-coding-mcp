@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*.*.*"
+  # Manual run: re-publish to the MCP Registry (npm is skipped when the version exists).
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -56,3 +58,18 @@ jobs:
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The MCP Registry verifies that the npm package exists and that its
+      # package.json `mcpName` matches server.json, so this runs after npm.
+      # Auth is GitHub Actions OIDC (id-token: write): the io.github.<owner>/*
+      # namespace is granted to workflows of that owner's repositories.
+      - name: Install mcp-publisher
+        run: |
+          OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_${OS}_${ARCH}.tar.gz" | tar xz mcp-publisher
+
+      - name: Publish to the MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
