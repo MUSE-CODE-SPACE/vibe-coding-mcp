@@ -1,5 +1,6 @@
 /**
- * Claude Code hook installer — writes the `Stop` + `SessionEnd` hooks that
+ * Claude Code hook installer — writes the `Stop` + `SessionEnd` (capture) and
+ * `SessionStart` (project-memory recall) hooks that
  * invoke `vibe-coding-mcp hook` into a Claude Code settings file, merging
  * with whatever is already there and backing the file up first.
  */
@@ -21,9 +22,16 @@ export function settingsPathFor(scope, cwd = process.cwd()) {
 export function hookCommand(binaryOnPath) {
     return binaryOnPath ? 'vibe-coding-mcp hook' : 'npx -y vibe-coding-mcp hook';
 }
+/** Events we own. `init` removes our entry from any of these that is no longer wanted. */
+const MANAGED_EVENTS = ['Stop', 'SessionEnd', 'SessionStart'];
 /** Build the hook groups we install. */
-export function buildHookGroups(command) {
+export function buildHookGroups(command, options = {}) {
     return {
+        // Fires when a session starts — prints the project-memory brief as additional
+        // context. Synchronous by design (its stdout is the context), so keep it short.
+        ...(options.recall === false
+            ? {}
+            : { SessionStart: [{ matcher: 'startup|clear', hooks: [{ type: 'command', command, timeout: 15 }] }] }),
         // Fires after every assistant turn — incremental capture, run in the background.
         Stop: [{ hooks: [{ type: 'command', command, timeout: 60, async: true }] }],
         // Fires once when the session closes — final capture.
@@ -39,16 +47,29 @@ function hasMarker(group) {
  * installed vibe-coding hook (any command text containing the marker) is
  * replaced so re-running `init` upgrades the command.
  */
-export function mergeHooks(settings, command) {
+export function mergeHooks(settings, command, options = {}) {
     const next = { ...settings, hooks: { ...(settings.hooks ?? {}) } };
-    const desired = buildHookGroups(command);
+    const desired = buildHookGroups(command, options);
     let changed = false;
+    // Drop our entry from managed events that are no longer wanted (e.g. --no-recall).
+    for (const event of MANAGED_EVENTS) {
+        if (desired[event] || !next.hooks[event])
+            continue;
+        const kept = next.hooks[event].filter((g) => !hasMarker(g));
+        if (kept.length === next.hooks[event].length)
+            continue;
+        if (kept.length)
+            next.hooks[event] = kept;
+        else
+            delete next.hooks[event];
+        changed = true;
+    }
     for (const [event, groups] of Object.entries(desired)) {
         const existing = next.hooks[event] ?? [];
         const kept = existing.filter((g) => !hasMarker(g));
         const removed = existing.length - kept.length;
         const already = existing.find((g) => hasMarker(g));
-        const sameCommand = already?.hooks.every((h) => h.command === command) && removed === 1;
+        const sameCommand = already?.hooks.every((h) => h.command === command) && removed === 1 && already.matcher === groups[0].matcher;
         if (sameCommand && already) {
             // Keep as-is (but normalise position).
             continue;
@@ -112,6 +133,6 @@ export async function writeSettingsWithBackup(file, settings) {
 /** Does any event in the settings carry our hook? */
 export function hooksInstalled(settings) {
     const has = (event) => (settings.hooks?.[event] ?? []).some(hasMarker);
-    return { stop: has('Stop'), sessionEnd: has('SessionEnd') };
+    return { stop: has('Stop'), sessionEnd: has('SessionEnd'), sessionStart: has('SessionStart') };
 }
 //# sourceMappingURL=hookInstaller.js.map

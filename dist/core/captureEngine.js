@@ -8,8 +8,11 @@
  * update of the same stored session, not a new one.
  */
 import * as path from 'path';
-import { parseTranscriptFile, findLatestTranscript, isCodeLanguage, } from './transcriptParser.js';
-import { listSessions, saveSession, updateSession } from './sessionStorage.js';
+import { promises as fs } from 'fs';
+import { parseTranscriptFile, findLatestTranscript, isCodeLanguage, listAllClaudeTranscripts, } from './transcriptParser.js';
+import { listCodexTranscripts } from './codexParser.js';
+import { listSessions, saveSession, updateSession, getSession, getStorageDir, writeFileAtomic, } from './sessionStorage.js';
+import { execGit } from '../utils/gitExecutor.js';
 import { summarizeDesignDecisions } from '../tools/summarizeDesignDecisions.js';
 import { logger } from './logger.js';
 const captureLogger = logger.child({ module: 'captureEngine' });
@@ -50,10 +53,10 @@ export function buildTitle(parsed) {
             return clip(line, 100);
     }
     const date = (parsed.startedAt ?? new Date().toISOString()).slice(0, 10);
-    return `Claude Code session ${date}`;
+    return `${parsed.source === 'codex' ? 'Codex' : 'Claude Code'} session ${date}`;
 }
 /** Build the summary paragraph + "what was asked" bullets. */
-export function buildSummary(parsed, cwd) {
+export function buildSummary(parsed, cwd, commits = []) {
     const files = parsed.fileChanges;
     const topFiles = [...files]
         .sort((a, b) => b.touches - a.touches)
@@ -64,6 +67,8 @@ export function buildSummary(parsed, cwd) {
         `${files.length} file(s) changed, ${parsed.commands.length} command(s) run, ${formatDuration(parsed.durationSec)}.`);
     if (topFiles.length)
         lines.push(`Files: ${topFiles.join(', ')}${files.length > 8 ? `, +${files.length - 8} more` : ''}`);
+    if (commits.length)
+        lines.push(`Commits: ${commits.slice(0, 6).map((c) => `${c.hash} ${clip(c.subject, 70)}`).join('; ')}${commits.length > 6 ? `; +${commits.length - 6} more` : ''}`);
     const asks = parsed.userPrompts.slice(0, 6).map((p) => `- ${clip(firstLine(p.text) || p.text, 160)}`);
     if (asks.length) {
         lines.push('');
@@ -81,7 +86,7 @@ export function buildSummary(parsed, cwd) {
 }
 /** Derive tags: fixed markers + project name + top languages. */
 export function buildTags(parsed, cwd, extra = []) {
-    const tags = new Set(['claude-code', 'auto-capture']);
+    const tags = new Set([parsed.source ?? 'claude-code', 'auto-capture']);
     const projectDir = cwd ?? parsed.cwd;
     if (projectDir) {
         const name = path.basename(projectDir).toLowerCase().replace(/[^a-z0-9._-]+/g, '-');
@@ -104,7 +109,7 @@ export function buildTags(parsed, cwd, extra = []) {
 }
 /** Map file changes to code contexts (one per file). */
 export function buildCodeContexts(parsed, cwd, maxFiles) {
-    const sid = parsed.claudeSessionId ?? 'claude-code';
+    const sid = parsed.claudeSessionId ?? parsed.source ?? 'claude-code';
     return [...parsed.fileChanges]
         .sort((a, b) => b.touches - a.touches)
         .slice(0, maxFiles)
@@ -135,27 +140,122 @@ export async function buildDesignDecisions(parsed, maxDecisions) {
             language: 'auto',
             includeImportanceScore: true,
             extractRelatedCode: false,
-            maxDecisions,
+            // Over-fetch: the rationale filter below drops most candidates.
+            maxDecisions: Math.min(50, maxDecisions * 4),
             useAI: false,
         });
-        return out.decisions.map((d) => ({
+        // The pattern extractor is generous (any "X is better" sentence); for
+        // unattended capture keep only decisions that come with a stated reason,
+        // which is what makes them worth recalling later.
+        return out.decisions
+            .filter((d) => d.rationale && d.rationale !== 'Rationale not explicitly stated')
+            .map((d) => ({
             id: d.id,
             title: d.title,
             description: d.description,
             rationale: d.rationale,
             category: d.category,
             timestamp: d.timestamp,
-        }));
+        })).slice(0, maxDecisions);
     }
     catch (err) {
         captureLogger.warn('Design decision extraction failed', { error: err.message });
         return [];
     }
 }
-/** Locate an already-captured session for a Claude Code session id. */
-export async function findSessionByClaudeId(claudeSessionId) {
-    const { sessions } = await listSessions({ limit: 10000 });
-    return sessions.find((s) => s.metadata?.claudeSessionId === claudeSessionId) ?? null;
+// ---------------------------------------------------------------------------
+// capture index: agent session id → stored session id
+// ---------------------------------------------------------------------------
+/** Not `.json`, so `listSessions()` never mistakes it for a session. */
+const INDEX_FILE = 'capture-index.idx';
+async function readCaptureIndex() {
+    try {
+        const parsed = JSON.parse(await fs.readFile(path.join(getStorageDir(), INDEX_FILE), 'utf-8'));
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    }
+    catch {
+        return {};
+    }
+}
+async function rememberCapture(agentSessionId, sessionId) {
+    try {
+        const index = await readCaptureIndex();
+        if (index[agentSessionId] === sessionId)
+            return;
+        index[agentSessionId] = sessionId;
+        await writeFileAtomic(path.join(getStorageDir(), INDEX_FILE), JSON.stringify(index));
+    }
+    catch (err) {
+        // The index is only an accelerator; a full scan still finds the session.
+        captureLogger.warn('Could not update capture index', { error: err.message });
+    }
+}
+function matchesAgentId(meta, id) {
+    return meta?.agentSessionId === id || meta?.claudeSessionId === id;
+}
+/**
+ * Locate an already-captured session for an agent session id (Claude Code or
+ * Codex). The `Stop` hook calls this after every turn, so it first consults a
+ * small index file and only falls back to scanning the whole store on a miss.
+ */
+export async function findSessionByClaudeId(agentSessionId) {
+    const indexed = (await readCaptureIndex())[agentSessionId];
+    if (indexed) {
+        const hit = await getSession(indexed).catch(() => null);
+        if (hit && matchesAgentId(hit.metadata, agentSessionId)) {
+            return {
+                id: hit.id,
+                title: hit.title,
+                summary: hit.summary,
+                createdAt: hit.createdAt,
+                updatedAt: hit.updatedAt,
+                tags: hit.tags ?? [],
+                codeContextCount: hit.codeContexts?.length ?? 0,
+                designDecisionCount: hit.designDecisions?.length ?? 0,
+                metadata: hit.metadata,
+            };
+        }
+    }
+    const { sessions } = await listSessions({ limit: 100000 });
+    const found = sessions.find((s) => matchesAgentId(s.metadata, agentSessionId)) ?? null;
+    if (found)
+        await rememberCapture(agentSessionId, found.id);
+    return found;
+}
+/**
+ * Commits made in `cwd`'s repository between the session's first and last
+ * record (plus a short grace period for a commit that lands right after the
+ * final turn). Returns `[]` when `cwd` is not a git repository or git is
+ * unavailable — capture never fails because of this.
+ */
+export async function collectCommits(cwd, startedAt, endedAt, max = 30) {
+    if (!cwd || !startedAt || !endedAt)
+        return [];
+    const start = new Date(startedAt).getTime();
+    const end = new Date(endedAt).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end))
+        return [];
+    try {
+        const res = await execGit([
+            'log',
+            `--since=${new Date(start).toISOString()}`,
+            `--until=${new Date(end + 120_000).toISOString()}`,
+            '--no-merges',
+            `--max-count=${max}`,
+            '--format=%h%x09%cI%x09%s',
+        ], { cwd, timeout: 5000 });
+        if (res.exitCode !== 0)
+            return [];
+        return res.stdout
+            .split('\n')
+            .map((l) => l.split('\t'))
+            .filter((parts) => parts.length >= 3 && parts[0])
+            .map(([hash, date, ...subject]) => ({ hash, date, subject: subject.join('\t').slice(0, 200) }))
+            .reverse();
+    }
+    catch {
+        return [];
+    }
 }
 /**
  * Capture one transcript file into the session store.
@@ -172,6 +272,8 @@ export async function captureTranscript(transcriptPath, options = {}) {
         commands: parsed.commands.length,
         designDecisions: 0,
         durationSec: parsed.durationSec,
+        commits: 0,
+        tokens: parsed.tokens?.total ?? 0,
     };
     if (parsed.userPrompts.length < minPrompts && parsed.fileChanges.length === 0) {
         return {
@@ -187,9 +289,13 @@ export async function captureTranscript(transcriptPath, options = {}) {
     stats.designDecisions = designDecisions.length;
     const existing = parsed.claudeSessionId ? await findSessionByClaudeId(parsed.claudeSessionId) : null;
     const previousCount = Number(existing?.metadata?.captureCount ?? 0);
+    const commits = options.linkCommits === false ? [] : await collectCommits(cwd, parsed.startedAt, parsed.endedAt);
+    stats.commits = commits.length;
+    const source = parsed.source ?? 'claude-code';
     const metadata = {
-        source: 'claude-code',
-        claudeSessionId: parsed.claudeSessionId,
+        source,
+        agentSessionId: parsed.claudeSessionId,
+        claudeSessionId: source === 'claude-code' ? parsed.claudeSessionId : undefined,
         transcriptPath,
         cwd,
         project: cwd ? path.basename(cwd) : undefined,
@@ -208,10 +314,13 @@ export async function captureTranscript(transcriptPath, options = {}) {
         capturedAt: new Date().toISOString(),
         captureCount: previousCount + 1,
         commands: parsed.commands.slice(0, 50).map((c) => c.command),
+        tokens: parsed.tokens?.total ? parsed.tokens : undefined,
+        models: parsed.models && Object.keys(parsed.models).length ? parsed.models : undefined,
+        commits: commits.length ? commits : undefined,
     };
     const body = {
         title,
-        summary: buildSummary(parsed, cwd),
+        summary: buildSummary(parsed, cwd, commits),
         tags: buildTags(parsed, cwd, options.extraTags),
         codeContexts: buildCodeContexts(parsed, cwd, options.maxFiles ?? 40),
         designDecisions,
@@ -228,6 +337,8 @@ export async function captureTranscript(transcriptPath, options = {}) {
         return { status: 'updated', sessionId: updated.id, claudeSessionId: parsed.claudeSessionId, transcriptPath, title, stats, session: body };
     }
     const created = await saveSession(body);
+    if (parsed.claudeSessionId)
+        await rememberCapture(parsed.claudeSessionId, created.id);
     captureLogger.info('Session created from transcript', { sessionId: created.id, claudeSessionId: parsed.claudeSessionId });
     return { status: 'created', sessionId: created.id, claudeSessionId: parsed.claudeSessionId, transcriptPath, title, stats, session: body };
 }
@@ -239,5 +350,64 @@ export async function captureLatestForCwd(cwd, options = {}) {
     if (!transcript)
         return null;
     return captureTranscript(transcript, { ...options, cwd: options.cwd ?? cwd });
+}
+/** Agent session id encoded in a transcript file name. */
+function idFromFileName(ref) {
+    const base = path.basename(ref.path, '.jsonl');
+    // Codex: rollout-2026-11-23T23-48-56-<uuid>
+    return ref.source === 'codex' ? base.slice(-36) : base;
+}
+/**
+ * Capture every Claude Code / Codex transcript on this machine that is new or
+ * has changed since it was last captured. This is the hook-free path: run it
+ * once to backfill history, or on a schedule for agents that have no hooks.
+ */
+export async function syncTranscripts(options = {}) {
+    const agent = options.agent ?? 'all';
+    const sinceMs = Date.now() - (options.days ?? 30) * 86_400_000;
+    const refs = [];
+    if (agent !== 'codex')
+        refs.push(...(await listAllClaudeTranscripts(sinceMs)));
+    if (agent !== 'claude')
+        refs.push(...(await listCodexTranscripts(sinceMs)));
+    refs.sort((a, b) => (a.modifiedAt < b.modifiedAt ? -1 : 1)); // oldest first
+    const { sessions } = await listSessions({ limit: 100000 });
+    const capturedAt = new Map();
+    for (const s of sessions) {
+        const id = (s.metadata?.agentSessionId ?? s.metadata?.claudeSessionId);
+        const at = typeof s.metadata?.capturedAt === 'string' ? new Date(s.metadata.capturedAt).getTime() : NaN;
+        if (id && Number.isFinite(at))
+            capturedAt.set(id, at);
+    }
+    const out = { scanned: refs.length, upToDate: 0, created: 0, updated: 0, skipped: 0, failed: [], results: [] };
+    let captured = 0;
+    for (const ref of refs) {
+        const last = capturedAt.get(idFromFileName(ref));
+        if (last !== undefined && new Date(ref.modifiedAt).getTime() <= last) {
+            out.upToDate += 1;
+            continue;
+        }
+        if (options.limit && captured >= options.limit)
+            break;
+        try {
+            const result = await captureTranscript(ref.path, { hookEvent: 'sync', dryRun: options.dryRun, extraTags: options.extraTags });
+            if (result.status === 'created' || result.status === 'dry-run')
+                out.created += 1;
+            else if (result.status === 'updated')
+                out.updated += 1;
+            else
+                out.skipped += 1;
+            if (result.status !== 'skipped')
+                captured += 1;
+            // Keep the returned payload small: the full session body is in the store.
+            const slim = { ...result, session: undefined };
+            out.results.push(slim);
+            options.onResult?.(slim);
+        }
+        catch (err) {
+            out.failed.push({ transcriptPath: ref.path, error: err.message });
+        }
+    }
+    return out;
 }
 //# sourceMappingURL=captureEngine.js.map

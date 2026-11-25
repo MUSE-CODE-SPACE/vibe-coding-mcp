@@ -6,7 +6,9 @@
  *   vibe-coding-mcp hook         Claude Code hook: read the hook JSON from stdin,
  *                                capture the transcript, never block Claude
  *   vibe-coding-mcp capture      capture the newest transcript for the cwd by hand
- *   vibe-coding-mcp init         install the Stop + SessionEnd hooks into Claude Code settings
+ *   vibe-coding-mcp init         install the capture (Stop + SessionEnd) and recall (SessionStart) hooks
+ *   vibe-coding-mcp sync         capture every new/changed Claude Code + Codex transcript on this machine
+ *   vibe-coding-mcp recall       print what was done in this project before
  *   vibe-coding-mcp doctor       check hooks, storage, transcripts, env
  *
  * The `hook` subcommand is the piece that makes auto-capture real: Claude

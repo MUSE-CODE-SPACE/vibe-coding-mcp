@@ -35,8 +35,21 @@ export interface UserPrompt {
     text: string;
     timestamp?: string;
 }
+/** Token usage summed over a session (API-reported, deduplicated per response). */
+export interface TokenUsage {
+    input: number;
+    output: number;
+    cacheRead: number;
+    cacheWrite: number;
+    /** input + output + cacheRead + cacheWrite */
+    total: number;
+}
+export type TranscriptSource = 'claude-code' | 'codex';
+export declare function emptyTokens(): TokenUsage;
 export interface ParsedTranscript {
-    /** Claude Code session id (file basename). */
+    /** Which agent wrote the transcript. */
+    source: TranscriptSource;
+    /** Agent session id (Claude Code: file basename; Codex: `session_meta.id`). Name kept for compatibility. */
     claudeSessionId?: string;
     cwd?: string;
     gitBranch?: string;
@@ -64,6 +77,10 @@ export interface ParsedTranscript {
     skippedLines: number;
     /** Title Claude Code assigned to the session (`ai-title` record), if any. */
     aiTitle?: string;
+    /** Token usage reported by the API for the main conversation (sub-agents excluded). */
+    tokens: TokenUsage;
+    /** Model id → number of API responses, e.g. { "claude-sonnet-5-5": 41 }. */
+    models: Record<string, number>;
 }
 export interface ParseOptions {
     /** Max characters kept per file snippet. Default 4000. */
@@ -88,6 +105,8 @@ export declare function parseTranscriptText(text: string, options?: ParseOptions
  * Parse a transcript file from disk.
  */
 export declare function parseTranscriptFile(filePath: string, options?: ParseOptions): Promise<ParsedTranscript>;
+/** Codex CLI rollouts start with a `session_meta` record and wrap everything in `payload`. */
+export declare function looksLikeCodexTranscript(text: string): boolean;
 /** Expand a leading `~` to the home directory. */
 export declare function expandHome(p: string): string;
 /** Root of Claude Code's per-project transcript store. */
@@ -108,4 +127,12 @@ export declare function listTranscripts(cwd: string): Promise<Array<{
     modifiedAt: string;
     sizeBytes: number;
 }>>;
+export interface TranscriptRef {
+    path: string;
+    modifiedAt: string;
+    sizeBytes: number;
+    source: TranscriptSource;
+}
+/** Every Claude Code transcript on this machine (all projects), newest first. */
+export declare function listAllClaudeTranscripts(sinceMs?: number): Promise<TranscriptRef[]>;
 //# sourceMappingURL=transcriptParser.d.ts.map

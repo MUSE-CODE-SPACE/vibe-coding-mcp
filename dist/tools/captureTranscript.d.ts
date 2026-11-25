@@ -4,10 +4,12 @@
  * uses, exposed as an MCP tool so the agent can say "save this session now"
  * even when no hook is installed).
  */
-import { CaptureResult } from '../core/captureEngine.js';
-export type CaptureTranscriptAction = 'capture' | 'preview' | 'list';
+import { CaptureResult, SyncResult } from '../core/captureEngine.js';
+export type CaptureTranscriptAction = 'capture' | 'preview' | 'list' | 'sync';
 export interface CaptureTranscriptInput {
     action?: CaptureTranscriptAction;
+    agent?: 'claude' | 'codex' | 'all';
+    days?: number;
     transcriptPath?: string;
     cwd?: string;
     all?: boolean;
@@ -27,6 +29,7 @@ export interface CaptureTranscriptOutput {
         modifiedAt: string;
         sizeBytes: number;
     }>;
+    sync?: Omit<SyncResult, 'results'>;
     message?: string;
     error?: string;
 }
@@ -40,6 +43,15 @@ export declare const captureTranscriptSchema: {
             action: {
                 type: string;
                 enum: string[];
+                description: string;
+            };
+            agent: {
+                type: string;
+                enum: string[];
+                description: string;
+            };
+            days: {
+                type: string;
                 description: string;
             };
             transcriptPath: {

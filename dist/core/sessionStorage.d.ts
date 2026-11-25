@@ -45,6 +45,15 @@ export interface SessionData {
  * Initialize storage directory
  */
 export declare function initializeStorage(customDir?: string): Promise<void>;
+/** Directory the session files live in. */
+export declare function getStorageDir(): string;
+/**
+ * Write a file atomically (temp file + rename). The Claude Code `Stop` hook
+ * runs in the background and can overlap with `SessionEnd` or a running MCP
+ * server; a plain `writeFile` lets a concurrent reader see a half-written
+ * session and treat it as missing.
+ */
+export declare function writeFileAtomic(filePath: string, content: string): Promise<void>;
 /**
  * Save a session
  */

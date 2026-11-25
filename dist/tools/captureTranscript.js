@@ -4,7 +4,7 @@
  * uses, exposed as an MCP tool so the agent can say "save this session now"
  * even when no hook is installed).
  */
-import { captureTranscript, captureLatestForCwd } from '../core/captureEngine.js';
+import { captureTranscript, captureLatestForCwd, syncTranscripts } from '../core/captureEngine.js';
 import { findLatestTranscript, listTranscripts, parseTranscriptFile, expandHome } from '../core/transcriptParser.js';
 export async function captureTranscriptTool(input) {
     const action = input.action ?? 'capture';
@@ -20,6 +20,23 @@ export async function captureTranscriptTool(input) {
                 message: transcripts.length
                     ? `Found ${transcripts.length} transcript(s) for ${cwd}`
                     : `No Claude Code transcripts found for ${cwd}. Start a Claude Code session in that directory first.`,
+            };
+        }
+        if (action === 'sync') {
+            const { results, ...sync } = await syncTranscripts({
+                agent: input.agent,
+                days: input.days,
+                limit: input.limit,
+                extraTags: input.tags,
+            });
+            return {
+                success: true,
+                action,
+                results: results.slice(-20),
+                sync,
+                message: `Scanned ${sync.scanned} transcript(s) from the last ${input.days ?? 30} day(s): ` +
+                    `${sync.created} new, ${sync.updated} updated, ${sync.upToDate} already up to date, ${sync.skipped} skipped` +
+                    (sync.failed.length ? `, ${sync.failed.length} failed` : '') + '.',
             };
         }
         const common = {
@@ -76,21 +93,24 @@ function describe(results) {
 }
 export const captureTranscriptSchema = {
     name: 'muse_capture_transcript',
-    description: 'Capture a Claude Code conversation transcript (~/.claude/projects/**/*.jsonl) into the vibe-coding session store: ' +
-        'extracts user prompts, files written/edited (with code), shell commands, duration, and design decisions — no API key needed. ' +
-        'Idempotent per Claude session (re-capturing updates the same stored session). ' +
-        'Use action=capture to save the newest transcript for the current project, action=preview to see what would be saved, action=list to enumerate transcripts.',
+    description: 'Capture a Claude Code (~/.claude/projects/**/*.jsonl) or Codex CLI (~/.codex/sessions/**/*.jsonl) transcript into the vibe-coding session store: ' +
+        'extracts user prompts, files written/edited (with code), shell commands, active duration, token usage, models, commits made during the session, and design decisions — no API key needed. ' +
+        'Idempotent per agent session (re-capturing updates the same stored session). ' +
+        'Use action=capture to save the newest Claude Code transcript for the current project, action=preview to see what would be saved, action=list to enumerate transcripts, ' +
+        'action=sync to capture every new or changed transcript on this machine across all projects (Claude Code + Codex).',
     inputSchema: {
         type: 'object',
         properties: {
             action: {
                 type: 'string',
-                enum: ['capture', 'preview', 'list'],
-                description: 'capture (default): save to session store. preview: parse only, return the session body. list: enumerate transcripts for cwd.',
+                enum: ['capture', 'preview', 'list', 'sync'],
+                description: 'capture (default): save to session store. preview: parse only, return the session body. list: enumerate transcripts for cwd. sync: capture all new/changed transcripts machine-wide.',
             },
+            agent: { type: 'string', enum: ['claude', 'codex', 'all'], description: 'sync only: which agents to scan (default all).' },
+            days: { type: 'number', description: 'sync only: look at transcripts modified within this many days (default 30).' },
             transcriptPath: {
                 type: 'string',
-                description: 'Explicit path to a .jsonl transcript. If omitted, the newest transcript for cwd is used.',
+                description: 'Explicit path to a Claude Code or Codex .jsonl transcript (format is auto-detected). If omitted, the newest Claude Code transcript for cwd is used.',
             },
             cwd: {
                 type: 'string',
@@ -100,7 +120,7 @@ export const captureTranscriptSchema = {
                 type: 'boolean',
                 description: 'Capture every transcript for cwd (newest first, up to limit) instead of just the latest.',
             },
-            limit: { type: 'number', description: 'Max transcripts for all=true or action=list (default 50 / 20).' },
+            limit: { type: 'number', description: 'Max transcripts for all=true / action=list (default 50 / 20), or max captures for action=sync.' },
             minPrompts: { type: 'number', description: 'Skip transcripts with fewer human prompts than this and no file changes (default 1).' },
             maxFiles: { type: 'number', description: 'Max changed files stored as code contexts (default 40).' },
             maxDecisions: { type: 'number', description: 'Max design decisions extracted (default 10).' },

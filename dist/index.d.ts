@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 /**
- * HTTP entry point — Streamable HTTP transport (MCP 2025-03-26).
+ * HTTP entry point — Streamable HTTP transport.
  *
- * As of v2.14.0 this file is a transport-bind around the shared
- * `createMcpServer()` factory. It exposes the *same* 15 tools, 3 resources,
- * and 3 prompts as the stdio entry point in `src/stdio.ts` — the old SSE /
- * 7-tool drift is gone.
+ * A transport-bind around the shared `createMcpServer()` factory, so it
+ * exposes exactly the same tools, resources and prompts as the stdio entry
+ * point in `src/stdio.ts`.
  *
- * The previous `SSEServerTransport` (deprecated in the MCP spec) has been
- * replaced with `StreamableHTTPServerTransport`. The SSE GET endpoint is
- * preserved as a compatibility shim that points clients at `/mcp`.
+ * Environment:
+ *   PORT                  listen port (default 3000)
+ *   HOST                  bind address (default 127.0.0.1 — local only; set 0.0.0.0 to expose)
+ *   MCP_AUTH_TOKEN        when set, `/mcp` requires `Authorization: Bearer <token>`
+ *   MCP_ALLOWED_ORIGINS   comma-separated browser origins allowed by CORS (default: none)
+ *   MCP_SESSION_TTL_MIN   idle minutes before an MCP session is closed (default 60)
  */
 export {};
 //# sourceMappingURL=index.d.ts.map

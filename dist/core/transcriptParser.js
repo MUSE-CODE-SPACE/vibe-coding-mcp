@@ -14,6 +14,9 @@
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+export function emptyTokens() {
+    return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 };
+}
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 /** Languages that count as "code" for tagging; data/doc formats and unknown extensions do not. */
 const CODE_LANGS = new Set([
@@ -44,6 +47,14 @@ export function cleanUserText(text) {
         .replace(/<command-message>[\s\S]*?<\/command-message>/g, '')
         .replace(/<command-args>[\s\S]*?<\/command-args>/g, '')
         .replace(/<local-command-stdout>[\s\S]*?<\/local-command-stdout>/g, '')
+        .replace(/<local-command-stderr>[\s\S]*?<\/local-command-stderr>/g, '')
+        .replace(/<local-command-caveat>[\s\S]*?<\/local-command-caveat>/g, '')
+        .replace(/<bash-(input|stdout|stderr)>[\s\S]*?<\/bash-\1>/g, '')
+        // Hook plumbing that older Claude Code versions wrote without the isMeta flag.
+        .replace(/^Stop hook feedback:[\s\S]*$/, '')
+        .replace(/^A session-scoped Stop hook is now active[\s\S]*$/, '')
+        .replace(/^Base directory for this skill:[\s\S]*$/, '')
+        .replace(/^\[Request interrupted by user[^\]]*\]\s*$/gm, '')
         // Harness-generated user-role records: background task notifications and
         // image-dimension notes are not something the human typed.
         .replace(/<task-notification>[\s\S]*?<\/task-notification>/g, '')
@@ -76,6 +87,9 @@ export function parseTranscriptText(text, options = {}) {
     let prevTs;
     let activeSec = 0;
     const result = {
+        source: 'claude-code',
+        tokens: emptyTokens(),
+        models: {},
         userPrompts: [],
         assistantTexts: [],
         fileChanges: [],
@@ -85,6 +99,11 @@ export function parseTranscriptText(text, options = {}) {
         skippedLines: 0,
     };
     const fileMap = new Map();
+    // One API response is written as several assistant records (one per content
+    // block), each repeating the same `message.id` + `usage`. Keep the last
+    // usage seen per response so tokens are not counted once per block.
+    const usageByMessage = new Map();
+    let anonymousUsage = 0;
     for (const line of text.split('\n')) {
         const trimmed = line.trim();
         if (!trimmed)
@@ -125,6 +144,11 @@ export function parseTranscriptText(text, options = {}) {
         }
         const content = rec.message?.content;
         if (rec.type === 'user') {
+            // Not typed by the human: harness notes, compaction summaries, background-task results.
+            if (rec.isMeta || rec.isCompactSummary)
+                continue;
+            if (rec.origin?.kind && rec.origin.kind !== 'human')
+                continue;
             if (typeof content === 'string') {
                 const cleaned = cleanUserText(content);
                 if (cleaned)
@@ -141,6 +165,11 @@ export function parseTranscriptText(text, options = {}) {
         }
         // assistant
         result.assistantTurns += 1;
+        const usage = rec.message?.usage;
+        if (usage && typeof usage === 'object') {
+            const key = rec.message?.id ?? `anon-${(anonymousUsage += 1)}`;
+            usageByMessage.set(key, { model: rec.message?.model, usage });
+        }
         if (!Array.isArray(content)) {
             if (typeof content === 'string' && content.trim()) {
                 result.assistantTexts.push(truncate(content.trim(), maxTextChars));
@@ -217,6 +246,17 @@ export function parseTranscriptText(text, options = {}) {
             }
         }
     }
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    for (const { model, usage } of usageByMessage.values()) {
+        result.tokens.input += num(usage.input_tokens);
+        result.tokens.output += num(usage.output_tokens);
+        result.tokens.cacheRead += num(usage.cache_read_input_tokens);
+        result.tokens.cacheWrite += num(usage.cache_creation_input_tokens);
+        // `<synthetic>` is Claude Code's placeholder for locally generated messages.
+        if (model && !model.startsWith('<'))
+            result.models[model] = (result.models[model] || 0) + 1;
+    }
+    result.tokens.total = result.tokens.input + result.tokens.output + result.tokens.cacheRead + result.tokens.cacheWrite;
     if (result.startedAt && result.endedAt) {
         const ms = new Date(result.endedAt).getTime() - new Date(result.startedAt).getTime();
         if (Number.isFinite(ms) && ms >= 0) {
@@ -232,9 +272,21 @@ export function parseTranscriptText(text, options = {}) {
 export async function parseTranscriptFile(filePath, options) {
     const resolved = expandHome(filePath);
     const text = await fs.readFile(resolved, 'utf-8');
+    if (looksLikeCodexTranscript(text)) {
+        const { parseCodexTranscriptText } = await import('./codexParser.js');
+        const codex = parseCodexTranscriptText(text, options);
+        codex.claudeSessionId ??= path.basename(resolved, '.jsonl');
+        return codex;
+    }
     const parsed = parseTranscriptText(text, options);
     parsed.claudeSessionId ??= path.basename(resolved, '.jsonl');
     return parsed;
+}
+/** Codex CLI rollouts start with a `session_meta` record and wrap everything in `payload`. */
+export function looksLikeCodexTranscript(text) {
+    const head = text.slice(0, 4000);
+    const firstLine = head.split('\n').find((l) => l.trim().length > 0) ?? '';
+    return /"type"\s*:\s*"session_meta"/.test(firstLine) || (/"payload"\s*:/.test(firstLine) && /"type"\s*:\s*"(response_item|event_msg|turn_context)"/.test(firstLine));
 }
 /** Expand a leading `~` to the home directory. */
 export function expandHome(p) {
@@ -307,6 +359,43 @@ export async function listTranscripts(cwd) {
         }
         catch {
             /* ignore */
+        }
+    }
+    return out.sort((a, b) => (a.modifiedAt < b.modifiedAt ? 1 : -1));
+}
+/** Every Claude Code transcript on this machine (all projects), newest first. */
+export async function listAllClaudeTranscripts(sinceMs = 0) {
+    const root = claudeProjectsDir();
+    let projects;
+    try {
+        projects = await fs.readdir(root);
+    }
+    catch {
+        return [];
+    }
+    const out = [];
+    for (const proj of projects) {
+        const dir = path.join(root, proj);
+        let entries;
+        try {
+            entries = await fs.readdir(dir);
+        }
+        catch {
+            continue;
+        }
+        for (const name of entries) {
+            if (!name.endsWith('.jsonl'))
+                continue;
+            const full = path.join(dir, name);
+            try {
+                const st = await fs.stat(full);
+                if (!st.isFile() || st.mtimeMs < sinceMs)
+                    continue;
+                out.push({ path: full, modifiedAt: st.mtime.toISOString(), sizeBytes: st.size, source: 'claude-code' });
+            }
+            catch {
+                /* ignore */
+            }
         }
     }
     return out.sort((a, b) => (a.modifiedAt < b.modifiedAt ? 1 : -1));

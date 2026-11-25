@@ -174,7 +174,7 @@ const PROMPTS = [
                                 '',
                                 'Workflow:',
                                 `1. Call \`muse_digest\` with period="${period}"${custom}, groupBy="${groupBy}", language="${language}", includePrompts=true.`,
-                                '2. If totals.sessions is 0, tell the user to run `npx vibe-coding-mcp init` (installs the Claude Code capture hook) or `muse_capture_transcript` with all=true to backfill, then stop.',
+                                '2. If totals.sessions is 0, call `muse_capture_transcript` with action="sync" once to backfill transcripts and retry; if still 0, tell the user to run `npx vibe-coding-mcp init` (installs the Claude Code capture hook), then stop.',
                                 '3. Rewrite the digest\'s Markdown into a report with sections: **Shipped** (concrete outcomes per project, from session titles + files), **Decisions** (from highlights, keep rationale), **In progress / blocked**, **Next week**. Keep file paths in backticks. Do not invent work that is not in the digest.',
                                 args.platform
                                     ? `4. Call \`muse_normalize_for_platform\` with platform="${args.platform}" then \`muse_publish_document\` with title "Weekly report <since> → <until>".`
@@ -211,6 +211,40 @@ const PROMPTS = [
                                 `2. Call \`muse_digest\` with period="today", groupBy="project", language="${language}", includePrompts=true.`,
                                 '3. Call `muse_git` action="status" for the current repo to spot uncommitted work.',
                                 `4. Output exactly three short bullet groups in ${language === 'ko' ? 'Korean' : 'English'}: **Yesterday** (from step 1), **Today** (from step 2 + uncommitted work), **Blockers** (anything in the sessions that reads like a failure, revert, or open question; write "none" if nothing). Max 3 bullets per group, no preamble.`,
+                            ].join('\n'),
+                        },
+                    },
+                ],
+            };
+        },
+    },
+    {
+        descriptor: {
+            name: 'catch-up',
+            description: 'Get back up to speed on a project: what was done in earlier Claude Code / Codex sessions, why, what is still uncommitted, and a suggested next step.',
+            arguments: [
+                { name: 'topic', description: 'Optional focus, e.g. "auth refactor" or a file path. Omit for the latest sessions.', required: false },
+                { name: 'language', description: '`en` (default) or `ko`.', required: false },
+            ],
+        },
+        build: (args) => {
+            const language = (args.language || 'en').toLowerCase() === 'ko' ? 'ko' : 'en';
+            const topic = args.topic?.trim();
+            return {
+                description: `Catch up on this project${topic ? ` (${topic})` : ''}.`,
+                messages: [
+                    {
+                        role: 'user',
+                        content: {
+                            type: 'text',
+                            text: [
+                                `Catch me up on this project${topic ? `, focusing on: ${topic}` : ''}.`,
+                                '',
+                                'Workflow:',
+                                `1. Call \`muse_recall\` with cwd=<the current project directory>, language="${language}"${topic ? `, query=${JSON.stringify(topic)}` : ', limit=5'}.`,
+                                '2. If it returns no sessions, call `muse_capture_transcript` with action="sync" once to backfill transcripts, then repeat step 1. If there is still nothing, say so and stop.',
+                                '3. Call `muse_git` action="status" (and action="log" with a small limit) to see what is uncommitted and what landed since the last session.',
+                                `4. Answer in ${language === 'ko' ? 'Korean' : 'English'} with: **Where things stand** (2–4 bullets), **Decisions to remember** (with rationale), **Loose ends** (uncommitted or unfinished work, anything a session ended in the middle of), **Suggested next step** (one). Keep file paths in backticks. Recalled sessions can be stale: where they disagree with git or the code, trust the code and say so.`,
                             ].join('\n'),
                         },
                     },

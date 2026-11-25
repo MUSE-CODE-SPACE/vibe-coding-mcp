@@ -261,10 +261,10 @@ export declare const ExportSessionSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const ProjectProfileSchema: z.ZodObject<{
     action: z.ZodEnum<{
+        delete: "delete";
         create: "create";
         get: "get";
         update: "update";
-        delete: "delete";
         list: "list";
         setActive: "setActive";
         getActive: "getActive";
@@ -350,11 +350,11 @@ export declare const ProjectProfileSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const SessionHistorySchema: z.ZodObject<{
     action: z.ZodEnum<{
+        delete: "delete";
         search: "search";
         stats: "stats";
         get: "get";
         update: "update";
-        delete: "delete";
         list: "list";
         save: "save";
     }>;
@@ -413,9 +413,9 @@ export declare const SessionStatsSchema: z.ZodObject<{
     until: z.ZodOptional<z.ZodString>;
     period: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
         all: "all";
-        day: "day";
         week: "week";
         month: "month";
+        day: "day";
         year: "year";
     }>>>;
     tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
@@ -464,10 +464,10 @@ export declare const AutoTagSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const TemplateSchema: z.ZodObject<{
     action: z.ZodEnum<{
+        delete: "delete";
         create: "create";
         get: "get";
         update: "update";
-        delete: "delete";
         list: "list";
         apply: "apply";
         preview: "preview";
@@ -546,10 +546,10 @@ export declare const BatchSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const GitSchema: z.ZodObject<{
     action: z.ZodEnum<{
-        status: "status";
-        log: "log";
-        diff: "diff";
         branch: "branch";
+        log: "log";
+        status: "status";
+        diff: "diff";
         snapshot: "snapshot";
         extractDecisions: "extractDecisions";
         linkToSession: "linkToSession";
@@ -592,10 +592,17 @@ export declare const GitSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const CaptureTranscriptSchema: z.ZodObject<{
     action: z.ZodDefault<z.ZodOptional<z.ZodEnum<{
+        sync: "sync";
         list: "list";
         preview: "preview";
         capture: "capture";
     }>>>;
+    agent: z.ZodOptional<z.ZodEnum<{
+        codex: "codex";
+        all: "all";
+        claude: "claude";
+    }>>;
+    days: z.ZodOptional<z.ZodNumber>;
     transcriptPath: z.ZodOptional<z.ZodString>;
     cwd: z.ZodOptional<z.ZodString>;
     all: z.ZodOptional<z.ZodBoolean>;
@@ -607,12 +614,12 @@ export declare const CaptureTranscriptSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const DigestSchema: z.ZodObject<{
     period: z.ZodOptional<z.ZodEnum<{
-        custom: "custom";
-        week: "week";
-        month: "month";
         today: "today";
         yesterday: "yesterday";
+        week: "week";
         "last-week": "last-week";
+        month: "month";
+        custom: "custom";
     }>>;
     since: z.ZodOptional<z.ZodString>;
     until: z.ZodOptional<z.ZodString>;
@@ -637,6 +644,22 @@ export declare const DigestSchema: z.ZodObject<{
     includePrompts: z.ZodOptional<z.ZodBoolean>;
     maxSessions: z.ZodOptional<z.ZodNumber>;
     title: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const RecallSchema: z.ZodObject<{
+    query: z.ZodOptional<z.ZodString>;
+    cwd: z.ZodOptional<z.ZodString>;
+    project: z.ZodOptional<z.ZodString>;
+    scope: z.ZodOptional<z.ZodEnum<{
+        all: "all";
+        project: "project";
+    }>>;
+    limit: z.ZodOptional<z.ZodNumber>;
+    maxChars: z.ZodOptional<z.ZodNumber>;
+    sinceDays: z.ZodOptional<z.ZodNumber>;
+    language: z.ZodOptional<z.ZodEnum<{
+        ko: "ko";
+        en: "en";
+    }>>;
 }, z.core.$strip>;
 export type CollectCodeContextInput = z.infer<typeof CollectCodeContextSchema>;
 export type SummarizeDesignDecisionsInput = z.infer<typeof SummarizeDesignDecisionsSchema>;

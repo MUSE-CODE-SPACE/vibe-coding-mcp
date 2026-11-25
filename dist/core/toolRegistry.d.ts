@@ -1,5 +1,5 @@
 /**
- * Shared tool registry — single source of truth for all 17 MCP tools.
+ * Shared tool registry — single source of truth for all 18 MCP tools.
  *
  * Both entry points (`src/index.ts` HTTP transport and `src/stdio.ts` stdio
  * transport) import from this module so they expose an identical capability
@@ -29,10 +29,24 @@ export interface RegisteredTool {
     handler: (args: unknown) => unknown | Promise<unknown>;
 }
 /**
- * All 17 tools, in display order. Edit this array to add/remove/reorder
+ * All 18 tools, in display order. Edit this array to add/remove/reorder
  * capabilities. The order here is the order clients see in `tools/list`.
  */
 export declare const TOOL_REGISTRY: readonly RegisteredTool[];
+/**
+ * Behaviour hints (MCP tool annotations) and display titles, keyed by tool
+ * name. Clients use these to decide what needs confirmation: read-only tools
+ * can be auto-approved, `openWorldHint` marks tools that reach external
+ * services.
+ */
+export interface ToolAnnotations {
+    title: string;
+    readOnlyHint?: boolean;
+    destructiveHint?: boolean;
+    idempotentHint?: boolean;
+    openWorldHint?: boolean;
+}
+export declare const TOOL_ANNOTATIONS: Record<string, ToolAnnotations>;
 /** All tool names exposed by the server. */
 export declare function getToolNames(): string[];
 /** All tool descriptors (for `tools/list`). */

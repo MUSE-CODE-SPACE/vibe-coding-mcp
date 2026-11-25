@@ -32,6 +32,14 @@ export interface DigestSessionSummary {
     filesTouched: string[];
     decisionTitles: string[];
     tags: string[];
+    /** Agent that produced the session (`claude-code`, `codex`), when captured. */
+    source?: string;
+    /** Total tokens (input + output + cache) reported by the API. */
+    tokens?: number;
+    commits: Array<{
+        hash: string;
+        subject: string;
+    }>;
 }
 export interface DigestOutput {
     success: boolean;
@@ -48,6 +56,18 @@ export interface DigestOutput {
         designDecisions: number;
         prompts: number;
         projects: string[];
+        commits: number;
+        tokens: {
+            input: number;
+            output: number;
+            cacheRead: number;
+            cacheWrite: number;
+            total: number;
+        };
+        /** Model id → API responses across the range. */
+        models: Record<string, number>;
+        /** Agent → session count. */
+        sources: Record<string, number>;
     };
     groups: Array<{
         key: string;
@@ -61,11 +81,14 @@ export interface DigestOutput {
     message?: string;
     error?: string;
 }
+/** YYYY-MM-DD in the machine's time zone (an 08:00 KST session belongs to that day, not the UTC day before). */
+export declare function localDate(value: Date | string): string;
 export declare function resolveRange(input: DigestInput, now?: Date): {
     since: Date;
     until: Date;
     period: DigestPeriod;
 };
+export declare function fmtTokens(n: number): string;
 export declare function renderDigestMarkdown(out: Omit<DigestOutput, 'content' | 'success'>, fullSessions: Map<string, SessionData>, input: DigestInput): string;
 export declare function digestTool(input: DigestInput): Promise<DigestOutput>;
 export declare const digestSchema: {

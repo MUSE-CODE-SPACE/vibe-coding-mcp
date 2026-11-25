@@ -1,5 +1,6 @@
 /**
- * Claude Code hook installer — writes the `Stop` + `SessionEnd` hooks that
+ * Claude Code hook installer — writes the `Stop` + `SessionEnd` (capture) and
+ * `SessionStart` (project-memory recall) hooks that
  * invoke `vibe-coding-mcp hook` into a Claude Code settings file, merging
  * with whatever is already there and backing the file up first.
  */
@@ -23,15 +24,22 @@ export type SettingsScope = 'global' | 'project' | 'local';
 export declare function settingsPathFor(scope: SettingsScope, cwd?: string): string;
 /** The hook command. Prefers a globally-installed binary, falls back to npx. */
 export declare function hookCommand(binaryOnPath: boolean): string;
+export interface HookOptions {
+    /**
+     * Also install a `SessionStart` hook that injects a short brief of earlier
+     * sessions in the project into each new Claude Code session. Default true.
+     */
+    recall?: boolean;
+}
 /** Build the hook groups we install. */
-export declare function buildHookGroups(command: string): Record<string, HookGroup[]>;
+export declare function buildHookGroups(command: string, options?: HookOptions): Record<string, HookGroup[]>;
 /**
  * Pure merge: returns a new settings object with our hooks present exactly
  * once per event. Existing unrelated hooks are preserved. A previously
  * installed vibe-coding hook (any command text containing the marker) is
  * replaced so re-running `init` upgrades the command.
  */
-export declare function mergeHooks(settings: ClaudeSettings, command: string): {
+export declare function mergeHooks(settings: ClaudeSettings, command: string, options?: HookOptions): {
     settings: ClaudeSettings;
     changed: boolean;
 };
@@ -48,5 +56,6 @@ export declare function writeSettingsWithBackup(file: string, settings: ClaudeSe
 export declare function hooksInstalled(settings: ClaudeSettings): {
     stop: boolean;
     sessionEnd: boolean;
+    sessionStart: boolean;
 };
 //# sourceMappingURL=hookInstaller.d.ts.map

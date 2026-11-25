@@ -2,7 +2,7 @@
  * MCP server factory — builds a fully-wired `McpServer` instance using the
  * high-level `@modelcontextprotocol/sdk` API. Used by both entry points
  * (`src/index.ts` and `src/stdio.ts`) so they expose an identical surface:
- * 17 tools, 5 resources (two of which are templates), 5 prompts.
+ * 18 tools, 5 resources (two of which are templates), 6 prompts.
  *
  * High-level vs low-level: previously both entry points constructed a
  * low-level `Server` and registered request handlers for
@@ -12,16 +12,27 @@
  * resources and prompts support along the way.
  */
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createRequire } from 'module';
 import { z } from 'zod';
-import { TOOL_REGISTRY } from './toolRegistry.js';
+import { TOOL_REGISTRY, TOOL_ANNOTATIONS } from './toolRegistry.js';
 import { createErrorResponse, ToolError } from './errors.js';
 import { STATIC_RESOURCE_DESCRIPTORS, readSessionsList, readSessionDetail, readConfig, readSessionsToday, readSearch, } from './resources.js';
 import { PROMPT_DESCRIPTORS, findPrompt } from './prompts.js';
 import { listSessions } from './sessionStorage.js';
 const SERVER_NAME = 'vibe-coding-mcp';
-const SERVER_VERSION = '2.15.2';
+// Single source of truth: package.json (dist/core → ../../package.json).
+const SERVER_VERSION = createRequire(import.meta.url)('../../package.json').version;
+/** Sent to clients in the `initialize` result; tells the model when to reach for which tool. */
+const SERVER_INSTRUCTIONS = [
+    'vibe-coding-mcp keeps a local memory of AI coding sessions (Claude Code and Codex CLI) and turns it into documents.',
+    '- Starting work in a project touched before, or asked "why did we…" / "when did we change…": call muse_recall (cwd = project directory; add query to search).',
+    '- Standup / weekly report / retro: muse_digest.',
+    '- Nothing captured yet, or sessions are missing: muse_capture_transcript with action=sync backfills every Claude Code and Codex transcript on this machine.',
+    '- One session in full: muse_session_history (action=get). Turn it into a README / design doc / PR description with muse_generate_dev_document, then muse_publish_document.',
+    'All session data stays on this machine unless muse_publish_document or an AI option (useAI) is used.',
+].join('\n');
 /**
- * Build a new `McpServer` instance populated with all 17 tools, the resource
+ * Build a new `McpServer` instance populated with all 18 tools, the resource
  * set, and the prompt set. The returned server is not yet connected to a
  * transport — caller is responsible for `server.connect(transport)`.
  */
@@ -32,23 +43,27 @@ export function createMcpServer() {
             resources: {},
             prompts: {},
         },
+        instructions: SERVER_INSTRUCTIONS,
     });
     registerTools(server);
     registerResources(server);
     registerPrompts(server);
     return server;
 }
-/** Wire all 17 tools from the shared registry. */
+/** Wire all 18 tools from the shared registry. */
 function registerTools(server) {
     for (const tool of TOOL_REGISTRY) {
         const { name, description } = tool.descriptor;
+        const { title, ...annotations } = TOOL_ANNOTATIONS[name] ?? { title: name };
         // Use `registerTool` with the Zod schema for the input. The SDK uses
         // `normalizeObjectSchema` internally, which accepts our pre-built
         // `z.object(...)` instances. SDK pre-validates `args` before calling the
         // handler; our handler then re-runs `validateInput()` defensively.
         server.registerTool(name, {
+            title,
             description,
             inputSchema: tool.inputZodSchema,
+            annotations: { title, ...annotations },
         }, async (args) => {
             try {
                 const result = await tool.handler(args);

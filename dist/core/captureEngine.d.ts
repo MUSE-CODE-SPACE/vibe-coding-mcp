@@ -7,7 +7,7 @@
  * many times over a session's lifetime; every capture after the first is an
  * update of the same stored session, not a new one.
  */
-import { ParsedTranscript, ParseOptions } from './transcriptParser.js';
+import { ParsedTranscript, ParseOptions, TokenUsage, TranscriptSource } from './transcriptParser.js';
 import { SessionData, StoredSession } from './sessionStorage.js';
 export interface CaptureOptions extends ParseOptions {
     /** Hook event that triggered the capture (`Stop`, `SessionEnd`, `manual`, …). */
@@ -24,6 +24,14 @@ export interface CaptureOptions extends ParseOptions {
     maxDecisions?: number;
     /** Extra tags to attach. */
     extraTags?: string[];
+    /** Attach git commits made in the project during the session window. Default true. */
+    linkCommits?: boolean;
+}
+/** A git commit made while the session was running. */
+export interface SessionCommit {
+    hash: string;
+    date: string;
+    subject: string;
 }
 export interface CaptureResult {
     status: 'created' | 'updated' | 'skipped' | 'dry-run';
@@ -38,6 +46,8 @@ export interface CaptureResult {
         commands: number;
         designDecisions: number;
         durationSec?: number;
+        commits: number;
+        tokens: number;
     };
     reason?: string;
     /** The session body as it was (or would be) stored. */
@@ -45,7 +55,10 @@ export interface CaptureResult {
 }
 /** Metadata shape written by the capture engine. */
 export interface CaptureMetadata {
-    source: 'claude-code';
+    source: TranscriptSource;
+    /** Session id assigned by the agent (Claude Code or Codex) — the idempotency key. */
+    agentSessionId?: string;
+    /** Same id, Claude Code sessions only (kept for pre-2.16 readers). */
     claudeSessionId?: string;
     transcriptPath: string;
     cwd?: string;
@@ -66,20 +79,37 @@ export interface CaptureMetadata {
     hookEvent?: string;
     capturedAt: string;
     captureCount: number;
+    /** API-reported token usage for the main conversation. */
+    tokens?: TokenUsage;
+    /** Model id → number of API responses. */
+    models?: Record<string, number>;
+    /** Commits made in the project between the first and last record. */
+    commits?: SessionCommit[];
     [key: string]: unknown;
 }
 /** Build the human-readable title for a parsed transcript. */
 export declare function buildTitle(parsed: ParsedTranscript): string;
 /** Build the summary paragraph + "what was asked" bullets. */
-export declare function buildSummary(parsed: ParsedTranscript, cwd?: string): string;
+export declare function buildSummary(parsed: ParsedTranscript, cwd?: string, commits?: SessionCommit[]): string;
 /** Derive tags: fixed markers + project name + top languages. */
 export declare function buildTags(parsed: ParsedTranscript, cwd?: string, extra?: string[]): string[];
 /** Map file changes to code contexts (one per file). */
 export declare function buildCodeContexts(parsed: ParsedTranscript, cwd: string | undefined, maxFiles: number): SessionData['codeContexts'];
 /** Run the pattern-based design-decision extractor over the conversation. */
 export declare function buildDesignDecisions(parsed: ParsedTranscript, maxDecisions: number): Promise<SessionData['designDecisions']>;
-/** Locate an already-captured session for a Claude Code session id. */
-export declare function findSessionByClaudeId(claudeSessionId: string): Promise<StoredSession | null>;
+/**
+ * Locate an already-captured session for an agent session id (Claude Code or
+ * Codex). The `Stop` hook calls this after every turn, so it first consults a
+ * small index file and only falls back to scanning the whole store on a miss.
+ */
+export declare function findSessionByClaudeId(agentSessionId: string): Promise<StoredSession | null>;
+/**
+ * Commits made in `cwd`'s repository between the session's first and last
+ * record (plus a short grace period for a commit that lands right after the
+ * final turn). Returns `[]` when `cwd` is not a git repository or git is
+ * unavailable — capture never fails because of this.
+ */
+export declare function collectCommits(cwd: string | undefined, startedAt: string | undefined, endedAt: string | undefined, max?: number): Promise<SessionCommit[]>;
 /**
  * Capture one transcript file into the session store.
  */
@@ -88,4 +118,35 @@ export declare function captureTranscript(transcriptPath: string, options?: Capt
  * Capture the newest transcript for a working directory.
  */
 export declare function captureLatestForCwd(cwd: string, options?: CaptureOptions): Promise<CaptureResult | null>;
+export interface SyncOptions {
+    /** Which agents' transcripts to scan. Default `all`. */
+    agent?: 'claude' | 'codex' | 'all';
+    /** Only transcripts modified within this many days. Default 30. */
+    days?: number;
+    /** Stop after this many captures (skips do not count). */
+    limit?: number;
+    dryRun?: boolean;
+    extraTags?: string[];
+    /** Called after each transcript (CLI progress). */
+    onResult?: (result: CaptureResult) => void;
+}
+export interface SyncResult {
+    scanned: number;
+    /** Already captured and not modified since. */
+    upToDate: number;
+    created: number;
+    updated: number;
+    skipped: number;
+    failed: Array<{
+        transcriptPath: string;
+        error: string;
+    }>;
+    results: CaptureResult[];
+}
+/**
+ * Capture every Claude Code / Codex transcript on this machine that is new or
+ * has changed since it was last captured. This is the hook-free path: run it
+ * once to backfill history, or on a schedule for agents that have no hooks.
+ */
+export declare function syncTranscripts(options?: SyncOptions): Promise<SyncResult>;
 //# sourceMappingURL=captureEngine.d.ts.map
