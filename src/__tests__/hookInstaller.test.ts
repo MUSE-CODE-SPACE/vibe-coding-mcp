@@ -16,9 +16,12 @@ import {
 const CMD = 'npx -y vibe-coding-mcp hook';
 
 describe('hookInstaller', () => {
-  it('builds Stop (async) + SessionEnd hook groups', () => {
+  it('builds SessionStart (recall) + Stop (async) + SessionEnd hook groups', () => {
     const g = buildHookGroups(CMD);
-    expect(Object.keys(g)).toEqual(['Stop', 'SessionEnd']);
+    expect(Object.keys(g)).toEqual(['SessionStart', 'Stop', 'SessionEnd']);
+    expect(g.SessionStart[0].matcher).toBe('startup|clear');
+    expect(g.SessionStart[0].hooks[0].async).toBeUndefined();
+    expect(Object.keys(buildHookGroups(CMD, { recall: false }))).toEqual(['Stop', 'SessionEnd']);
     expect(g.Stop[0].hooks[0]).toEqual({ type: 'command', command: CMD, timeout: 60, async: true });
     expect(g.SessionEnd[0].hooks[0].async).toBeUndefined();
   });
@@ -31,7 +34,19 @@ describe('hookInstaller', () => {
   it('merges into empty settings', () => {
     const { settings, changed } = mergeHooks({}, CMD);
     expect(changed).toBe(true);
-    expect(hooksInstalled(settings)).toEqual({ stop: true, sessionEnd: true });
+    expect(hooksInstalled(settings)).toEqual({ stop: true, sessionEnd: true, sessionStart: true });
+  });
+
+  it('recall: false leaves SessionStart alone and removes a previously installed one', () => {
+    const captureOnly = mergeHooks({}, CMD, { recall: false });
+    expect(hooksInstalled(captureOnly.settings)).toEqual({ stop: true, sessionEnd: true, sessionStart: false });
+
+    const withRecall = mergeHooks({ hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'echo hi' }] }] } }, CMD);
+    expect(withRecall.settings.hooks!.SessionStart).toHaveLength(2);
+    const downgraded = mergeHooks(withRecall.settings, CMD, { recall: false });
+    expect(downgraded.changed).toBe(true);
+    expect(downgraded.settings.hooks!.SessionStart).toEqual([{ hooks: [{ type: 'command', command: 'echo hi' }] }]);
+    expect(hooksInstalled(downgraded.settings).stop).toBe(true);
   });
 
   it('preserves unrelated hooks and other keys, and is idempotent', () => {

@@ -1,5 +1,5 @@
 /**
- * Shared tool registry — single source of truth for all 17 MCP tools.
+ * Shared tool registry — single source of truth for all 18 MCP tools.
  *
  * Both entry points (`src/index.ts` HTTP transport and `src/stdio.ts` stdio
  * transport) import from this module so they expose an identical capability
@@ -28,6 +28,7 @@ import {
   BatchSchema,
   CaptureTranscriptSchema,
   DigestSchema,
+  RecallSchema,
 } from './schemas.js';
 
 // Tool implementations
@@ -51,6 +52,7 @@ import { templateTool, templateSchema } from '../tools/template.js';
 import { batchTool, batchSchema } from '../tools/batch.js';
 import { captureTranscriptTool, captureTranscriptSchema } from '../tools/captureTranscript.js';
 import { digestTool, digestSchema } from '../tools/digest.js';
+import { recallTool, recallSchema } from '../tools/recall.js';
 
 /**
  * MCP-style tool definition object (the JSON-schema descriptor that ships
@@ -77,7 +79,7 @@ export interface RegisteredTool {
 }
 
 /**
- * All 17 tools, in display order. Edit this array to add/remove/reorder
+ * All 18 tools, in display order. Edit this array to add/remove/reorder
  * capabilities. The order here is the order clients see in `tools/list`.
  */
 export const TOOL_REGISTRY: readonly RegisteredTool[] = [
@@ -217,7 +219,53 @@ export const TOOL_REGISTRY: readonly RegisteredTool[] = [
       return digestTool(validated as Parameters<typeof digestTool>[0]);
     },
   },
+  {
+    descriptor: recallSchema as ToolDescriptor,
+    inputZodSchema: RecallSchema,
+    handler: async (args) => {
+      const validated = validateInput(RecallSchema, args);
+      return recallTool(validated as Parameters<typeof recallTool>[0]);
+    },
+  },
 ] as const;
+
+/**
+ * Behaviour hints (MCP tool annotations) and display titles, keyed by tool
+ * name. Clients use these to decide what needs confirmation: read-only tools
+ * can be auto-approved, `openWorldHint` marks tools that reach external
+ * services.
+ */
+export interface ToolAnnotations {
+  title: string;
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
+const LOCAL_READ: Omit<ToolAnnotations, 'title'> = { readOnlyHint: true, openWorldHint: false };
+
+export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
+  muse_collect_code_context: { title: 'Collect code context', ...LOCAL_READ },
+  // May call the Anthropic API when useAI=true.
+  muse_summarize_design_decisions: { title: 'Summarize design decisions', readOnlyHint: true, openWorldHint: true },
+  muse_generate_dev_document: { title: 'Generate dev document', ...LOCAL_READ },
+  muse_normalize_for_platform: { title: 'Normalize for platform', ...LOCAL_READ },
+  muse_publish_document: { title: 'Publish document', readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  muse_create_session_log: { title: 'Create session log', ...LOCAL_READ },
+  muse_analyze_code: { title: 'Analyze code', ...LOCAL_READ },
+  muse_session_history: { title: 'Session history', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+  muse_export_session: { title: 'Export session', readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  muse_project_profile: { title: 'Project profile', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+  muse_git: { title: 'Git', readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  muse_session_stats: { title: 'Session statistics', ...LOCAL_READ },
+  muse_auto_tag: { title: 'Auto-tag sessions', readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  muse_template: { title: 'Document templates', readOnlyHint: false, destructiveHint: true, openWorldHint: false },
+  muse_batch: { title: 'Batch operations', readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+  muse_capture_transcript: { title: 'Capture transcript', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  muse_digest: { title: 'Digest / report', ...LOCAL_READ },
+  muse_recall: { title: 'Recall project history', ...LOCAL_READ },
+};
 
 /** All tool names exposed by the server. */
 export function getToolNames(): string[] {

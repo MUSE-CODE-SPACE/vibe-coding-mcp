@@ -392,7 +392,9 @@ export const GitSchema = z.object({
 
 // Transcript capture (v2.15)
 export const CaptureTranscriptSchema = z.object({
-  action: z.enum(['capture', 'preview', 'list']).optional().default('capture'),
+  action: z.enum(['capture', 'preview', 'list', 'sync']).optional().default('capture'),
+  agent: z.enum(['claude', 'codex', 'all']).optional(),
+  days: z.number().min(1).max(3650).optional(),
   transcriptPath: z.string().optional(),
   cwd: z.string().optional(),
   all: z.boolean().optional(),
@@ -418,6 +420,18 @@ export const DigestSchema = z.object({
   includePrompts: z.boolean().optional(),
   maxSessions: z.number().min(1).max(10000).optional(),
   title: z.string().optional()
+});
+
+// Project recall (v2.16)
+export const RecallSchema = z.object({
+  query: z.string().max(500).optional(),
+  cwd: z.string().optional(),
+  project: z.string().optional(),
+  scope: z.enum(['project', 'all']).optional(),
+  limit: z.number().min(1).max(50).optional(),
+  maxChars: z.number().min(500).max(50000).optional(),
+  sinceDays: z.number().min(1).max(3650).optional(),
+  language: z.enum(['en', 'ko']).optional()
 });
 
 // Type exports from schemas

@@ -6,16 +6,17 @@ Each workflow lists the tool calls in order, with realistic arguments and what t
 
 ```bash
 npx -y vibe-coding-mcp doctor          # shows: hooks not installed / transcripts found / store empty
-npx -y vibe-coding-mcp init            # writes Stop + SessionEnd hooks, prints backup path
+npx -y vibe-coding-mcp init            # writes Stop + SessionEnd + SessionStart hooks, prints backup path
 ```
 
 Then backfill what already exists on disk:
 
 ```json
-muse_capture_transcript { "action": "capture", "all": true, "cwd": "/abs/path/to/project" }
+muse_capture_transcript { "action": "sync" }                      // every project, Claude Code + Codex, last 30 days
+muse_capture_transcript { "action": "sync", "agent": "codex", "days": 90 }
 ```
 
-Expected: `results[]` with one `created` per Claude Code session (`skipped` for empty ones). Tell the user how many sessions were imported and that future sessions are captured automatically after a Claude Code restart.
+Expected: `sync { scanned, created, updated, upToDate, skipped }` and the last `results[]`. Tell the user how many sessions were imported and that future sessions are captured automatically after a Claude Code restart.
 
 ## B. Daily standup
 
@@ -89,6 +90,18 @@ muse_git             { "action": "diff", "repoPath": "<metadata.cwd>", "diffType
 
 Assemble: **Why** (decisions + first prompt) · **What changed** (`metadata.filesTouched` + diff stat) · **Trade-offs** (decision `tradeoffs` / `alternatives`) · **How to review** (Mermaid from `muse_analyze_code`, suggested read order).
 
+## I. Catch up on a project / answer "why did we…"
+
+```json
+muse_recall { "cwd": "/abs/path/to/project" }                               // newest 5 sessions
+muse_recall { "cwd": "/abs/path/to/project", "query": "token refresh" }      // ranked by relevance
+muse_recall { "scope": "all", "query": "src/core/cache.ts", "sinceDays": 60 } // every project
+muse_session_history { "action": "get", "sessionId": "<id from recall>" }    // full session when the brief is not enough
+muse_git { "action": "status" }                                              // what is uncommitted now
+```
+
+Answer with **Where things stand** · **Decisions to remember** (with rationale) · **Loose ends** · **Suggested next step**. If recall is empty, run `sync` once (A) and retry before saying there is no history.
+
 ## G. Capture one session right now (no hooks)
 
 ```json
@@ -104,4 +117,7 @@ muse_capture_transcript { "action": "capture", "tags": ["sprint-12"] }
 | "No Claude Code transcript found for cwd" | The MCP server's cwd differs from the project. Pass `cwd` explicitly, or `transcriptPath`. |
 | Hook never runs | Claude Code must be restarted after `init`. Confirm with `cat ~/.vibe-coding-mcp/hook.log`. |
 | Publishing fails with `INTEGRATION_NOT_CONFIGURED` | Read `vibe-coding://config`; set the missing env var in the MCP server's `env` block. |
+| Codex sessions are missing | Codex has no hooks: run `npx -y vibe-coding-mcp sync` (or `muse_capture_transcript` `sync`). `doctor` shows how many rollouts it can see. |
+| New sessions do not get the project-memory brief | `doctor` must show `SessionStart(recall)=yes`; re-run `init`. It is skipped on resume/compact, when `VIBE_CODING_RECALL=off`, and when the project has no earlier captured session. |
+| The brief shows sessions from another project | Matching is by directory: a session matches when it ran in the project directory or below it. |
 | Titles look like pasted emails | Titles prefer the user's own words; a session whose only prompt is a paste keeps a `[pasted: …]` marker. Rename with `muse_session_history` `update`. |

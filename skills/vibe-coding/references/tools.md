@@ -1,27 +1,36 @@
 # vibe-coding-mcp — tool, resource and prompt reference
 
-Server name: `vibe-coding-mcp` · npm: `vibe-coding-mcp` (v2.15+) · transport: stdio (`npx -y vibe-coding-mcp`) or Streamable HTTP (`POST /mcp`).
+Server name: `vibe-coding-mcp` · npm: `vibe-coding-mcp` (v2.16+) · transport: stdio (`npx -y vibe-coding-mcp`) or Streamable HTTP (`POST /mcp`).
 
 ## CLI (outside the MCP)
 
 | Command | Purpose |
 |---|---|
-| `npx -y vibe-coding-mcp init` | Install `Stop` + `SessionEnd` hooks into `~/.claude/settings.json` (backup created). `--project` / `--local` target the repo's `.claude/settings*.json`. `--remove` uninstalls. `--print` shows the hooks block. |
-| `npx -y vibe-coding-mcp doctor` | Check hooks, transcripts for cwd, session store, last hook run, platform env vars. |
+| `npx -y vibe-coding-mcp init` | Install `Stop` + `SessionEnd` (capture) and `SessionStart` (project-memory brief) hooks into `~/.claude/settings.json` (backup created). `--no-recall` installs capture only. `--project` / `--local` target the repo's `.claude/settings*.json`. `--remove` uninstalls. `--print` shows the hooks block. |
+| `npx -y vibe-coding-mcp doctor` | Check hooks, Claude Code transcripts for cwd, Codex rollouts, session store, last hook run, platform env vars. |
+| `npx -y vibe-coding-mcp sync [--agent claude\|codex\|all] [--days 30] [--limit n] [--dry-run] [--json]` | Capture every new or changed transcript on the machine, all projects. Skips what is already up to date. |
+| `npx -y vibe-coding-mcp recall [query] [--all] [--cwd dir] [--limit n] [--days n] [--lang ko] [--json]` | Print the project-memory brief for the cwd, or search sessions. |
 | `npx -y vibe-coding-mcp capture [--all] [--transcript <file>] [--dry-run] [--json]` | Capture the newest (or every) transcript for the cwd by hand. |
-| `npx -y vibe-coding-mcp hook` | What the hooks run. Reads Claude Code's hook JSON on stdin; never prints to stdout; always exits 0. |
+| `npx -y vibe-coding-mcp hook` | What the hooks run. Reads Claude Code's hook JSON on stdin; always exits 0. `Stop` / `SessionEnd` capture and print nothing; `SessionStart` prints the project-memory brief as `additionalContext`. |
 
 Storage: `~/.vibe-coding-mcp/sessions/<id>.json` (override with `VIBE_CODING_STORAGE_DIR`). Hook activity log: `~/.vibe-coding-mcp/hook.log`.
 
-## Tools (17)
+## Tools (18)
 
 ### Capture & memory
 
-**`muse_capture_transcript`** — Claude Code transcript → stored session. No API key.
-- `action`: `capture` (default) | `preview` (no write) | `list`
+**`muse_recall`** — earlier sessions of a project. Read-only, no API key.
+- `cwd?` project dir (default server cwd; sessions captured there or in a sub-directory match) or `project?` (directory basename); `scope`: `project` (default) | `all`
+- `query?` ranks by relevance across title, decisions, file paths, commit subjects, tags, summary, commands; without it: newest first
+- `limit?` (5), `maxChars?` (6000), `sinceDays?`, `language`: `en` | `ko`
+- Returns `matched`, `sessions[] { id, title, date, source, project, gitBranch, durationSec, asks[], files[], decisions[{title, rationale}], commits[{hash, subject}], lastResponse, score? }`, `content` (Markdown brief).
+
+**`muse_capture_transcript`** — Claude Code / Codex transcript → stored session. No API key.
+- `action`: `capture` (default) | `preview` (no write) | `list` | `sync` (machine-wide: `agent` `claude` \| `codex` \| `all`, `days` default 30, `limit` = max captures; returns `sync { scanned, upToDate, created, updated, skipped, failed[] }`)
 - `transcriptPath?` explicit `.jsonl`; `cwd?` project dir (default server cwd); `all?: boolean` every transcript for cwd; `limit?`; `minPrompts?` (default 1); `maxFiles?` (40); `maxDecisions?` (10); `tags?: string[]`
-- Returns `results[]` with `status` (`created` | `updated` | `skipped` | `dry-run`), `sessionId`, `title`, `stats { prompts, assistantTurns, filesChanged, commands, designDecisions, durationSec }`.
-- Stored session `metadata`: `source: "claude-code"`, `claudeSessionId`, `cwd`, `project`, `gitBranch`, `startedAt`, `endedAt`, `durationSec`, `promptCount`, `filesTouched[]`, `commandCount`, `commands[]`, `toolCounts`, `captureCount`.
+- Returns `results[]` with `status` (`created` | `updated` | `skipped` | `dry-run`), `sessionId`, `title`, `stats { prompts, assistantTurns, filesChanged, commands, designDecisions, durationSec, commits, tokens }`.
+- Stored session `metadata`: `source` (`claude-code` | `codex`), `agentSessionId` (+ `claudeSessionId` for Claude Code), `cwd`, `project`, `gitBranch`, `startedAt`, `endedAt`, `durationSec` (active, idle gaps > 30 min excluded), `wallClockSec`, `promptCount`, `filesTouched[]`, `commandCount`, `commands[]`, `toolCounts`, `tokens { input, output, cacheRead, cacheWrite, total }`, `models { <id>: responses }`, `commits[{ hash, date, subject }]` (commits made in `cwd` during the session), `captureCount`.
+- Auto-captured `designDecisions` keep only decisions with a stated rationale.
 
 **`muse_session_history`** — `action`: `save` | `get` | `update` | `delete` | `list` | `search` | `stats`.
 - `list`: `limit`, `offset`, `filterTags[]`, `sortBy` (`createdAt` | `updatedAt` | `title`), `sortOrder`.
@@ -33,7 +42,7 @@ Storage: `~/.vibe-coding-mcp/sessions/<id>.json` (override with `VIBE_CODING_STO
 - `groupBy`: `day` (default) | `project` | `tag` | `none`; `language`: `en` | `ko`; `format`: `markdown` | `json`
 - filters: `tags[]`, `project` (directory basename), `maxSessions`
 - content toggles: `includeFiles` (true), `includeDecisions` (true), `includePrompts` (false), `title`
-- Returns `totals { sessions, durationSec, filesTouched, uniqueFiles, designDecisions, prompts, projects[] }`, `groups[]`, `topFiles[]`, `content` (Markdown).
+- Returns `totals { sessions, durationSec, filesTouched, uniqueFiles, designDecisions, prompts, projects[], commits, tokens { input, output, cacheRead, cacheWrite, total }, models, sources }`, `groups[]`, `topFiles[]`, `content` (Markdown). Dates are local-time.
 
 **`muse_session_stats`** — `action`: `overview` | `languages` | `timeline` | `tags` | `productivity` | `trends`; `period`, `since`, `until`, `tags[]`, `format`, `compareWith`.
 
@@ -81,6 +90,7 @@ Storage: `~/.vibe-coding-mcp/sessions/<id>.json` (override with `VIBE_CODING_STO
 
 | Prompt | Args | Produces |
 |---|---|---|
+| `catch-up` | `topic?`, `language?` | Where the project stands: recall + git → decisions, loose ends, next step |
 | `daily-vibe-log` | `date?`, `language?` | One daily log from today's sessions |
 | `standup` | `language?` | Yesterday / Today / Blockers |
 | `weekly-report` | `period?`, `since?`, `until?`, `groupBy?`, `language?`, `platform?` | Shipped / Decisions / In progress / Next |
@@ -98,4 +108,6 @@ Storage: `~/.vibe-coding-mcp/sessions/<id>.json` (override with `VIBE_CODING_STO
 | `CONFLUENCE_BASE_URL`, `CONFLUENCE_USERNAME`, `CONFLUENCE_API_TOKEN`, `CONFLUENCE_SPACE_KEY` | Confluence |
 | `SLACK_WEBHOOK_URL`, `DISCORD_WEBHOOK_URL` | Slack / Discord (or pass `webhookUrl`) |
 | `VIBE_CODING_STORAGE_DIR` | Session store location |
-| `CLAUDE_CONFIG_DIR` | Where Claude Code keeps `settings.json` and `projects/` |
+| `CLAUDE_CONFIG_DIR` / `CODEX_HOME` | Where Claude Code keeps `settings.json` and `projects/` / where Codex keeps `sessions/` |
+| `VIBE_CODING_RECALL` (`off`), `VIBE_CODING_RECALL_SESSIONS` (3), `VIBE_CODING_RECALL_CHARS` (2000), `VIBE_CODING_RECALL_LANG` (`en` \| `ko`) | SessionStart brief: disable / size / language |
+| `HOST` (127.0.0.1), `PORT` (3000), `MCP_AUTH_TOKEN`, `MCP_ALLOWED_ORIGINS`, `MCP_SESSION_TTL_MIN` | HTTP transport only: bind address, bearer token for `/mcp`, allowed browser origins, idle-session timeout |

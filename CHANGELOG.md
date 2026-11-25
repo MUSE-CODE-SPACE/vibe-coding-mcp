@@ -8,7 +8,42 @@ All notable changes to `vibe-coding-mcp` are documented here. Format follows [Ke
 - Auto-summary by topic across weeks instead of by day.
 - Wider AST language support (Rust / Swift / Kotlin) + diagrams.
 - Git `prepare-commit-msg` integration surfacing decision summaries.
-- Capture for Cursor / Codex CLI transcripts (today: Claude Code only).
+- Capture for Cursor transcripts.
+
+## [2.16.0] - 2026-11-25
+
+### Highlights ⭐
+- **Project memory.** New tool `muse_recall`, CLI `vibe-coding-mcp recall [query]` and prompt `/catch-up`: the earlier sessions of a project (asks, files, decisions with rationale, commits, how it ended), newest first or ranked by a query across titles, decisions, file paths, commit subjects, tags and summaries. `scope: "all"` searches every project.
+- **New sessions start informed.** `init` now also installs a `SessionStart` hook (`startup` / `clear`) that gives Claude Code a short brief of earlier sessions in the same project as additional context. 3 sessions and 2 000 characters by default; `init --no-recall` or `VIBE_CODING_RECALL=off` turns it off.
+- **Codex CLI capture.** `~/.codex/sessions/**/rollout-*.jsonl` is parsed into the same session shape: prompts (goal + typed text, injected context dropped), `exec_command` commands, `apply_patch` file changes, cumulative token usage, model.
+- **`vibe-coding-mcp sync`.** Captures every new or changed transcript on the machine, all projects, Claude Code + Codex. Transcripts not modified since their last capture are skipped. Also `muse_capture_transcript { action: "sync" }`.
+- **Tokens, models and commits per session**, totalled by `muse_digest`.
+
+### Added
+- `src/core/recall.ts`, `src/tools/recall.ts` — recall engine + `muse_recall` (tool count 17 → 18).
+- `src/core/codexParser.ts` — Codex rollout parser (`exec` scripts, `apply_patch` envelopes, legacy `shell` / `apply_patch` function calls). Format is auto-detected, so `capture --transcript <file>` and `muse_capture_transcript { transcriptPath }` accept either agent's file.
+- Session `metadata`: `tokens { input, output, cacheRead, cacheWrite, total }`, `models`, `commits[]` (commits made in the session's directory between its first and last record), `agentSessionId`; `source` is now `claude-code` | `codex`.
+- `muse_digest` totals: `tokens`, `models`, `commits`, `sources`; the Markdown shows a token line, models, and per-session commits.
+- Prompt `catch-up` (prompts 5 → 6).
+- CLI: `sync`, `recall`, `init --no-recall`; `doctor` reports the `SessionStart` hook and Codex rollouts.
+- MCP: every tool has a `title` and annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`); the server sends `instructions` on `initialize`.
+- HTTP transport: `HOST`, `MCP_AUTH_TOKEN` (bearer auth on `/mcp`), `MCP_ALLOWED_ORIGINS`, `MCP_SESSION_TTL_MIN`; idle MCP sessions are closed; `SIGTERM` / `SIGINT` shut down cleanly; AI features initialise in HTTP mode too.
+- +28 tests (234 → 262): Codex parser, recall, sync, commit linkage, capture index, token accounting.
+
+### Changed
+- **HTTP server binds `127.0.0.1` by default** (was all interfaces). `Procfile` and `railway.json` set `HOST=0.0.0.0`; any other deployment that must be reachable from outside needs `HOST=0.0.0.0`. It logs a warning when listening on a non-loopback address without `MCP_AUTH_TOKEN`.
+- **CORS is an allow-list** (`MCP_ALLOWED_ORIGINS`, default none) instead of `*`, and `/mcp` rejects requests whose `Origin` is not on it. Non-browser MCP clients send no `Origin` and are unaffected.
+- `/mcp` answers `404` for an unknown `Mcp-Session-Id` and `400` for a non-initialize request without one (previously both opened a new transport).
+- Auto-captured design decisions keep only those with a stated rationale; expect fewer, less noisy decisions.
+- Digest and recall dates, and the digest's day grouping, use the local time zone (a session at 08:00 KST was filed under the previous UTC day).
+- Captured-session lookup goes through an index file (`sessions/capture-index.idx`) instead of reading every session on every `Stop`; session files are written atomically (temp file + rename).
+- Server version comes from `package.json`.
+- `engines.node` is now `>=20` (Node 18 is end-of-life; CI runs 22 and 24).
+- Dependencies: `@anthropic-ai/sdk` 1.14, `@modelcontextprotocol/sdk` 1.32.2, `@notionhq/client` 5.32, `dotenv` 18.0.10, `@types/node` 26.6.7; `npm audit fix` for transitive `body-parser` and `@hono/node-server` advisories (0 production advisories).
+
+### Fixed
+- **Harness records captured as prompts.** Skill preambles ("Base directory for this skill…"), Stop-hook notices, `<local-command-caveat>` blocks, compaction summaries and background-task results are user-role records but not something the human typed; they no longer appear in titles, "What was asked", or prompt counts (`isMeta`, `isCompactSummary`, `origin.kind`).
+- **Unhandled rejection in the HTTP transport.** A failing `/mcp` request was a floating promise; it now returns a JSON-RPC `500`.
 
 ## [2.15.2] - 2026-10-22
 

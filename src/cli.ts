@@ -6,7 +6,9 @@
  *   vibe-coding-mcp hook         Claude Code hook: read the hook JSON from stdin,
  *                                capture the transcript, never block Claude
  *   vibe-coding-mcp capture      capture the newest transcript for the cwd by hand
- *   vibe-coding-mcp init         install the Stop + SessionEnd hooks into Claude Code settings
+ *   vibe-coding-mcp init         install the capture (Stop + SessionEnd) and recall (SessionStart) hooks
+ *   vibe-coding-mcp sync         capture every new/changed Claude Code + Codex transcript on this machine
+ *   vibe-coding-mcp recall       print what was done in this project before
  *   vibe-coding-mcp doctor       check hooks, storage, transcripts, env
  *
  * The `hook` subcommand is the piece that makes auto-capture real: Claude
@@ -22,7 +24,9 @@ import * as os from 'os';
 import * as path from 'path';
 import { createRequire } from 'module';
 
-import { captureTranscript, captureLatestForCwd, CaptureResult } from './core/captureEngine.js';
+import { captureTranscript, captureLatestForCwd, syncTranscripts, CaptureResult } from './core/captureEngine.js';
+import { codexSessionsDir, listCodexTranscripts } from './core/codexParser.js';
+import { recall } from './core/recall.js';
 import { findLatestTranscript, listTranscripts, claudeProjectsDir, projectSlug, expandHome } from './core/transcriptParser.js';
 import {
   settingsPathFor,
@@ -57,6 +61,9 @@ interface Args {
   positional: string[];
 }
 
+/** Flags that never take a value, so `recall --all auth bug` keeps "auth bug" as the query. */
+const BOOLEAN_FLAGS = new Set(['all', 'json', 'dry-run', 'print', 'remove', 'local', 'no-recall', 'version']);
+
 function parseArgs(argv: string[]): Args {
   const [command = 'serve', ...rest] = argv;
   const flags: Record<string, string | boolean> = {};
@@ -66,6 +73,7 @@ function parseArgs(argv: string[]): Args {
     if (a.startsWith('--')) {
       const [k, inlineV] = a.slice(2).split('=', 2);
       if (inlineV !== undefined) flags[k] = inlineV;
+      else if (BOOLEAN_FLAGS.has(k)) flags[k] = true;
       else if (rest[i + 1] && !rest[i + 1].startsWith('--')) {
         flags[k] = rest[i + 1];
         i += 1;
@@ -136,8 +144,15 @@ function info(msg: string): void {
   console.log(`  · ${msg}`);
 }
 
+function fmtTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return String(n);
+}
+
 function summarize(r: CaptureResult): string {
-  return `${r.status}: "${r.title}" (${r.stats.prompts} prompts, ${r.stats.filesChanged} files, ${r.stats.designDecisions} decisions)` +
+  return `${r.status}: "${r.title}" (${r.stats.prompts} prompts, ${r.stats.filesChanged} files, ${r.stats.designDecisions} decisions` +
+    `${r.stats.commits ? `, ${r.stats.commits} commits` : ''}${r.stats.tokens ? `, ${fmtTokens(r.stats.tokens)} tokens` : ''})` +
     (r.sessionId ? ` → ${r.sessionId}` : '') +
     (r.reason ? ` — ${r.reason}` : '');
 }
@@ -165,6 +180,11 @@ async function runHook(args: Args): Promise<void> {
   let transcript = flagStr(args.flags, 'transcript') ?? (typeof payload.transcript_path === 'string' ? payload.transcript_path : undefined);
   if (transcript) transcript = expandHome(transcript);
 
+  if (hookEvent === 'SessionStart') {
+    await runSessionStartHook(payload, cwd);
+    return;
+  }
+
   try {
     if (!transcript) transcript = (await findLatestTranscript(cwd)) ?? undefined;
     if (!transcript) {
@@ -186,6 +206,94 @@ async function runHook(args: Args): Promise<void> {
     await appendHookLog({ event: hookEvent, cwd, status: 'error', error: (err as Error).message });
     if (process.env.VIBE_CODING_HOOK_DEBUG) console.error(`[vibe-coding-mcp hook] error: ${(err as Error).message}`);
   }
+}
+
+/**
+ * `SessionStart`: print a short brief of earlier sessions in this project as
+ * additional context for the new session. This is the one hook event whose
+ * stdout we use; anything that goes wrong prints nothing.
+ *
+ *   VIBE_CODING_RECALL=off          disable without uninstalling the hook
+ *   VIBE_CODING_RECALL_SESSIONS=3   how many earlier sessions to include
+ *   VIBE_CODING_RECALL_CHARS=2000   character budget
+ *   VIBE_CODING_RECALL_LANG=ko      heading language
+ */
+async function runSessionStartHook(payload: Record<string, unknown>, cwd: string): Promise<void> {
+  const setting = (process.env.VIBE_CODING_RECALL ?? '').toLowerCase();
+  if (['off', '0', 'false', 'no'].includes(setting)) return;
+  // A resumed or compacted session already carries its own history.
+  const source = typeof payload.source === 'string' ? payload.source : 'startup';
+  if (source !== 'startup' && source !== 'clear') return;
+
+  try {
+    const result = await recall({
+      cwd,
+      limit: Number(process.env.VIBE_CODING_RECALL_SESSIONS) || 3,
+      maxChars: Number(process.env.VIBE_CODING_RECALL_CHARS) || 2000,
+      language: process.env.VIBE_CODING_RECALL_LANG === 'ko' ? 'ko' : 'en',
+      excludeAgentSessionId: typeof payload.session_id === 'string' ? payload.session_id : undefined,
+    });
+    await appendHookLog({ event: 'SessionStart', cwd, status: result.sessions.length ? 'recalled' : 'nothing-to-recall', sessions: result.sessions.length });
+    if (!result.content) return;
+    process.stdout.write(
+      JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: result.content } }) + '\n',
+    );
+  } catch (err) {
+    await appendHookLog({ event: 'SessionStart', cwd, status: 'error', error: (err as Error).message });
+  }
+}
+
+async function runRecall(args: Args): Promise<void> {
+  logger.setLevel('error');
+  const query = args.positional.join(' ').trim() || flagStr(args.flags, 'query');
+  const result = await recall({
+    cwd: flagStr(args.flags, 'cwd') ? expandHome(flagStr(args.flags, 'cwd')!) : undefined,
+    project: flagStr(args.flags, 'project'),
+    scope: args.flags.all === true ? 'all' : 'project',
+    query,
+    limit: Number(flagStr(args.flags, 'limit')) || undefined,
+    sinceDays: Number(flagStr(args.flags, 'days')) || undefined,
+    language: flagStr(args.flags, 'lang') === 'ko' ? 'ko' : 'en',
+  });
+  if (args.flags.json === true) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (!result.content) {
+    console.log(
+      `No captured sessions${query ? ` matching "${query}"` : ''} for ${result.scope === 'all' ? 'any project' : result.cwd ?? result.project}.\n` +
+        'Backfill with: vibe-coding-mcp sync',
+    );
+    return;
+  }
+  console.log(result.content);
+}
+
+async function runSync(args: Args): Promise<void> {
+  logger.setLevel('error');
+  const agentFlag = flagStr(args.flags, 'agent');
+  const agent = agentFlag === 'claude' || agentFlag === 'codex' ? agentFlag : 'all';
+  const days = Number(flagStr(args.flags, 'days')) || 30;
+  const dryRun = args.flags['dry-run'] === true;
+  const json = args.flags.json === true;
+
+  const result = await syncTranscripts({
+    agent,
+    days,
+    dryRun,
+    limit: Number(flagStr(args.flags, 'limit')) || undefined,
+    onResult: json ? undefined : (r) => console.log(summarize(r)),
+  });
+  if (json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  for (const f of result.failed) console.log(`failed: ${f.transcriptPath} — ${f.error}`);
+  console.log(
+    `\n${dryRun ? 'Would capture' : 'Synced'} ${agent === 'all' ? 'Claude Code + Codex' : agent} transcripts from the last ${days} day(s): ` +
+      `${result.scanned} scanned, ${result.created} new, ${result.updated} updated, ${result.upToDate} up to date, ` +
+      `${result.skipped} skipped${result.failed.length ? `, ${result.failed.length} failed` : ''}.`,
+  );
 }
 
 async function runCapture(args: Args): Promise<void> {
@@ -226,14 +334,15 @@ async function runInit(args: Args): Promise<void> {
   const scope: SettingsScope = args.flags.project === true ? 'project' : args.flags.local === true ? 'local' : 'global';
   const file = settingsPathFor(scope);
   const command = flagStr(args.flags, 'command') ?? hookCommand(await binaryOnPath());
+  const hookOptions = { recall: args.flags['no-recall'] !== true };
 
   if (args.flags.print === true) {
-    console.log(JSON.stringify({ hooks: buildHookGroups(command) }, null, 2));
+    console.log(JSON.stringify({ hooks: buildHookGroups(command, hookOptions) }, null, 2));
     return;
   }
 
   const current = await readSettings(file);
-  const { settings, changed } = args.flags.remove === true ? removeHooks(current) : mergeHooks(current, command);
+  const { settings, changed } = args.flags.remove === true ? removeHooks(current) : mergeHooks(current, command, hookOptions);
 
   if (!changed) {
     console.log(args.flags.remove === true ? `No vibe-coding hooks found in ${file}` : `Hooks already installed in ${file} (command: ${command})`);
@@ -250,6 +359,12 @@ async function runInit(args: Args): Promise<void> {
   if (args.flags.remove !== true) {
     console.log(`Hook command: ${command}`);
     console.log('\nNext: restart Claude Code. Every session will now be captured to ~/.vibe-coding-mcp/sessions/.');
+    if (hookOptions.recall) {
+      console.log('New sessions start with a short brief of earlier work in the same project');
+      console.log('(turn off with `init --no-recall` or VIBE_CODING_RECALL=off).');
+    }
+    console.log('Backfill sessions you already had (Claude Code + Codex):');
+    console.log('  npx vibe-coding-mcp sync');
     console.log('Register the MCP server too (for /daily-vibe-log, muse_digest, publishing):');
     console.log('  claude mcp add vibe-coding-mcp -- npx -y vibe-coding-mcp');
   }
@@ -266,7 +381,9 @@ async function runDoctor(): Promise<void> {
     try {
       const s = await readSettings(file);
       const st = hooksInstalled(s);
-      if (st.stop || st.sessionEnd) ok(`${scope}: ${file} — Stop=${st.stop ? 'yes' : 'no'}, SessionEnd=${st.sessionEnd ? 'yes' : 'no'}`);
+      if (st.stop || st.sessionEnd || st.sessionStart) {
+        ok(`${scope}: ${file} — Stop=${st.stop ? 'yes' : 'no'}, SessionEnd=${st.sessionEnd ? 'yes' : 'no'}, SessionStart(recall)=${st.sessionStart ? 'yes' : 'no'}`);
+      }
       else info(`${scope}: ${file} — not installed`);
     } catch (err) {
       warn(`${scope}: ${file} — unreadable (${(err as Error).message})`);
@@ -286,13 +403,19 @@ async function runDoctor(): Promise<void> {
   if (transcripts.length) ok(`${transcripts.length} transcript(s) for ${process.cwd()} (newest ${transcripts[0].modifiedAt})`);
   else info(`no transcripts yet for this directory (${projDir})`);
 
+  console.log('\nCodex CLI transcripts');
+  const codex = await listCodexTranscripts();
+  if (codex.length) ok(`${codex.length} rollout(s) under ${codexSessionsDir()} (newest ${codex[0].modifiedAt}) — capture with: vibe-coding-mcp sync`);
+  else info(`none found (${codexSessionsDir()})`);
+
   // 3. Storage
   console.log('\nSession store');
   try {
     const { sessions, total } = await listSessions({ limit: 5 });
-    const captured = sessions.filter((s) => s.metadata?.source === 'claude-code');
+    const captured = sessions.filter((s) => s.metadata?.source === 'claude-code' || s.metadata?.source === 'codex');
     ok(`${total} session(s) stored under ${STORAGE_ROOT}`);
-    if (captured.length) info(`latest auto-capture: "${captured[0].title}" at ${captured[0].updatedAt}`);
+    if (captured.length) info(`latest capture: "${captured[0].title}" at ${captured[0].updatedAt}`);
+    else if (transcripts.length || codex.length) info('nothing captured yet — backfill with: vibe-coding-mcp sync');
   } catch (err) {
     warn(`storage error: ${(err as Error).message}`);
   }
@@ -322,7 +445,9 @@ function printHelp(): void {
 
 Usage:
   vibe-coding-mcp                 start the MCP server (stdio)
-  vibe-coding-mcp init            install Claude Code Stop + SessionEnd hooks (~/.claude/settings.json)
+  vibe-coding-mcp init            install Claude Code hooks (~/.claude/settings.json):
+                                  Stop + SessionEnd capture, SessionStart project-memory brief
+      --no-recall                 capture only; do not inject earlier sessions into new ones
       --project | --local         write .claude/settings.json | .claude/settings.local.json instead
       --dry-run | --print         show the merged file | print only the hooks block
       --remove                    uninstall the hooks
@@ -332,6 +457,13 @@ Usage:
       --transcript <path>         capture a specific .jsonl
       --all                       capture every transcript for the cwd
       --cwd <dir> --dry-run --json
+  vibe-coding-mcp sync            capture every new/changed transcript on this machine (all projects)
+      --agent claude|codex|all    which agents to scan (default all)
+      --days <n>                  look back n days (default 30)
+      --limit <n> --dry-run --json
+  vibe-coding-mcp recall [query]  what was done in this project before (newest sessions, or search)
+      --all                       search every project
+      --cwd <dir> --project <name> --limit <n> --days <n> --lang ko --json
   vibe-coding-mcp doctor          diagnose hooks, transcripts, storage, platforms
   vibe-coding-mcp --version | --help
 `);
@@ -363,6 +495,12 @@ async function main(): Promise<void> {
       return;
     case 'init':
       await runInit(args);
+      return;
+    case 'sync':
+      await runSync(args);
+      return;
+    case 'recall':
+      await runRecall(args);
       return;
     case 'doctor':
       await runDoctor();

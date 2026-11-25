@@ -9,14 +9,30 @@
  */
 
 import * as path from 'path';
+import { promises as fs } from 'fs';
 import {
   parseTranscriptFile,
   findLatestTranscript,
   isCodeLanguage,
   ParsedTranscript,
   ParseOptions,
+  TokenUsage,
+  TranscriptSource,
+  TranscriptRef,
+  listAllClaudeTranscripts,
 } from './transcriptParser.js';
-import { listSessions, saveSession, updateSession, SessionData, StoredSession } from './sessionStorage.js';
+import { listCodexTranscripts } from './codexParser.js';
+import {
+  listSessions,
+  saveSession,
+  updateSession,
+  getSession,
+  getStorageDir,
+  writeFileAtomic,
+  SessionData,
+  StoredSession,
+} from './sessionStorage.js';
+import { execGit } from '../utils/gitExecutor.js';
 import { summarizeDesignDecisions } from '../tools/summarizeDesignDecisions.js';
 import { logger } from './logger.js';
 
@@ -37,6 +53,15 @@ export interface CaptureOptions extends ParseOptions {
   maxDecisions?: number;
   /** Extra tags to attach. */
   extraTags?: string[];
+  /** Attach git commits made in the project during the session window. Default true. */
+  linkCommits?: boolean;
+}
+
+/** A git commit made while the session was running. */
+export interface SessionCommit {
+  hash: string;
+  date: string;
+  subject: string;
 }
 
 export interface CaptureResult {
@@ -52,6 +77,8 @@ export interface CaptureResult {
     commands: number;
     designDecisions: number;
     durationSec?: number;
+    commits: number;
+    tokens: number;
   };
   reason?: string;
   /** The session body as it was (or would be) stored. */
@@ -60,7 +87,10 @@ export interface CaptureResult {
 
 /** Metadata shape written by the capture engine. */
 export interface CaptureMetadata {
-  source: 'claude-code';
+  source: TranscriptSource;
+  /** Session id assigned by the agent (Claude Code or Codex) — the idempotency key. */
+  agentSessionId?: string;
+  /** Same id, Claude Code sessions only (kept for pre-2.16 readers). */
   claudeSessionId?: string;
   transcriptPath: string;
   cwd?: string;
@@ -81,6 +111,12 @@ export interface CaptureMetadata {
   hookEvent?: string;
   capturedAt: string;
   captureCount: number;
+  /** API-reported token usage for the main conversation. */
+  tokens?: TokenUsage;
+  /** Model id → number of API responses. */
+  models?: Record<string, number>;
+  /** Commits made in the project between the first and last record. */
+  commits?: SessionCommit[];
   [key: string]: unknown;
 }
 
@@ -119,11 +155,11 @@ export function buildTitle(parsed: ParsedTranscript): string {
     if (line) return clip(line, 100);
   }
   const date = (parsed.startedAt ?? new Date().toISOString()).slice(0, 10);
-  return `Claude Code session ${date}`;
+  return `${parsed.source === 'codex' ? 'Codex' : 'Claude Code'} session ${date}`;
 }
 
 /** Build the summary paragraph + "what was asked" bullets. */
-export function buildSummary(parsed: ParsedTranscript, cwd?: string): string {
+export function buildSummary(parsed: ParsedTranscript, cwd?: string, commits: SessionCommit[] = []): string {
   const files = parsed.fileChanges;
   const topFiles = [...files]
     .sort((a, b) => b.touches - a.touches)
@@ -136,6 +172,7 @@ export function buildSummary(parsed: ParsedTranscript, cwd?: string): string {
       `${files.length} file(s) changed, ${parsed.commands.length} command(s) run, ${formatDuration(parsed.durationSec)}.`,
   );
   if (topFiles.length) lines.push(`Files: ${topFiles.join(', ')}${files.length > 8 ? `, +${files.length - 8} more` : ''}`);
+  if (commits.length) lines.push(`Commits: ${commits.slice(0, 6).map((c) => `${c.hash} ${clip(c.subject, 70)}`).join('; ')}${commits.length > 6 ? `; +${commits.length - 6} more` : ''}`);
 
   const asks = parsed.userPrompts.slice(0, 6).map((p) => `- ${clip(firstLine(p.text) || p.text, 160)}`);
   if (asks.length) {
@@ -155,7 +192,7 @@ export function buildSummary(parsed: ParsedTranscript, cwd?: string): string {
 
 /** Derive tags: fixed markers + project name + top languages. */
 export function buildTags(parsed: ParsedTranscript, cwd?: string, extra: string[] = []): string[] {
-  const tags = new Set<string>(['claude-code', 'auto-capture']);
+  const tags = new Set<string>([parsed.source ?? 'claude-code', 'auto-capture']);
   const projectDir = cwd ?? parsed.cwd;
   if (projectDir) {
     const name = path.basename(projectDir).toLowerCase().replace(/[^a-z0-9._-]+/g, '-');
@@ -181,7 +218,7 @@ export function buildCodeContexts(
   cwd: string | undefined,
   maxFiles: number,
 ): SessionData['codeContexts'] {
-  const sid = parsed.claudeSessionId ?? 'claude-code';
+  const sid = parsed.claudeSessionId ?? parsed.source ?? 'claude-code';
   return [...parsed.fileChanges]
     .sort((a, b) => b.touches - a.touches)
     .slice(0, maxFiles)
@@ -215,27 +252,128 @@ export async function buildDesignDecisions(
       language: 'auto',
       includeImportanceScore: true,
       extractRelatedCode: false,
-      maxDecisions,
+      // Over-fetch: the rationale filter below drops most candidates.
+      maxDecisions: Math.min(50, maxDecisions * 4),
       useAI: false,
     });
-    return out.decisions.map((d) => ({
+    // The pattern extractor is generous (any "X is better" sentence); for
+    // unattended capture keep only decisions that come with a stated reason,
+    // which is what makes them worth recalling later.
+    return out.decisions
+      .filter((d) => d.rationale && d.rationale !== 'Rationale not explicitly stated')
+      .map((d) => ({
       id: d.id,
       title: d.title,
       description: d.description,
       rationale: d.rationale,
       category: d.category,
       timestamp: d.timestamp,
-    }));
+    })).slice(0, maxDecisions);
   } catch (err) {
     captureLogger.warn('Design decision extraction failed', { error: (err as Error).message });
     return [];
   }
 }
 
-/** Locate an already-captured session for a Claude Code session id. */
-export async function findSessionByClaudeId(claudeSessionId: string): Promise<StoredSession | null> {
-  const { sessions } = await listSessions({ limit: 10000 });
-  return sessions.find((s) => s.metadata?.claudeSessionId === claudeSessionId) ?? null;
+// ---------------------------------------------------------------------------
+// capture index: agent session id → stored session id
+// ---------------------------------------------------------------------------
+
+/** Not `.json`, so `listSessions()` never mistakes it for a session. */
+const INDEX_FILE = 'capture-index.idx';
+
+async function readCaptureIndex(): Promise<Record<string, string>> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(path.join(getStorageDir(), INDEX_FILE), 'utf-8')) as unknown;
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function rememberCapture(agentSessionId: string, sessionId: string): Promise<void> {
+  try {
+    const index = await readCaptureIndex();
+    if (index[agentSessionId] === sessionId) return;
+    index[agentSessionId] = sessionId;
+    await writeFileAtomic(path.join(getStorageDir(), INDEX_FILE), JSON.stringify(index));
+  } catch (err) {
+    // The index is only an accelerator; a full scan still finds the session.
+    captureLogger.warn('Could not update capture index', { error: (err as Error).message });
+  }
+}
+
+function matchesAgentId(meta: Record<string, unknown> | undefined, id: string): boolean {
+  return meta?.agentSessionId === id || meta?.claudeSessionId === id;
+}
+
+/**
+ * Locate an already-captured session for an agent session id (Claude Code or
+ * Codex). The `Stop` hook calls this after every turn, so it first consults a
+ * small index file and only falls back to scanning the whole store on a miss.
+ */
+export async function findSessionByClaudeId(agentSessionId: string): Promise<StoredSession | null> {
+  const indexed = (await readCaptureIndex())[agentSessionId];
+  if (indexed) {
+    const hit = await getSession(indexed).catch(() => null);
+    if (hit && matchesAgentId(hit.metadata, agentSessionId)) {
+      return {
+        id: hit.id,
+        title: hit.title,
+        summary: hit.summary,
+        createdAt: hit.createdAt,
+        updatedAt: hit.updatedAt,
+        tags: hit.tags ?? [],
+        codeContextCount: hit.codeContexts?.length ?? 0,
+        designDecisionCount: hit.designDecisions?.length ?? 0,
+        metadata: hit.metadata,
+      };
+    }
+  }
+  const { sessions } = await listSessions({ limit: 100000 });
+  const found = sessions.find((s) => matchesAgentId(s.metadata, agentSessionId)) ?? null;
+  if (found) await rememberCapture(agentSessionId, found.id);
+  return found;
+}
+
+/**
+ * Commits made in `cwd`'s repository between the session's first and last
+ * record (plus a short grace period for a commit that lands right after the
+ * final turn). Returns `[]` when `cwd` is not a git repository or git is
+ * unavailable — capture never fails because of this.
+ */
+export async function collectCommits(
+  cwd: string | undefined,
+  startedAt: string | undefined,
+  endedAt: string | undefined,
+  max = 30,
+): Promise<SessionCommit[]> {
+  if (!cwd || !startedAt || !endedAt) return [];
+  const start = new Date(startedAt).getTime();
+  const end = new Date(endedAt).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return [];
+  try {
+    const res = await execGit(
+      [
+        'log',
+        `--since=${new Date(start).toISOString()}`,
+        `--until=${new Date(end + 120_000).toISOString()}`,
+        '--no-merges',
+        `--max-count=${max}`,
+        '--format=%h%x09%cI%x09%s',
+      ],
+      { cwd, timeout: 5000 },
+    );
+    if (res.exitCode !== 0) return [];
+    return res.stdout
+      .split('\n')
+      .map((l) => l.split('\t'))
+      .filter((parts) => parts.length >= 3 && parts[0])
+      .map(([hash, date, ...subject]) => ({ hash, date, subject: subject.join('\t').slice(0, 200) }))
+      .reverse();
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -254,6 +392,8 @@ export async function captureTranscript(transcriptPath: string, options: Capture
     commands: parsed.commands.length,
     designDecisions: 0,
     durationSec: parsed.durationSec,
+    commits: 0,
+    tokens: parsed.tokens?.total ?? 0,
   };
 
   if (parsed.userPrompts.length < minPrompts && parsed.fileChanges.length === 0) {
@@ -273,9 +413,14 @@ export async function captureTranscript(transcriptPath: string, options: Capture
   const existing = parsed.claudeSessionId ? await findSessionByClaudeId(parsed.claudeSessionId) : null;
   const previousCount = Number(existing?.metadata?.captureCount ?? 0);
 
+  const commits = options.linkCommits === false ? [] : await collectCommits(cwd, parsed.startedAt, parsed.endedAt);
+  stats.commits = commits.length;
+  const source: TranscriptSource = parsed.source ?? 'claude-code';
+
   const metadata: CaptureMetadata = {
-    source: 'claude-code',
-    claudeSessionId: parsed.claudeSessionId,
+    source,
+    agentSessionId: parsed.claudeSessionId,
+    claudeSessionId: source === 'claude-code' ? parsed.claudeSessionId : undefined,
     transcriptPath,
     cwd,
     project: cwd ? path.basename(cwd) : undefined,
@@ -294,11 +439,14 @@ export async function captureTranscript(transcriptPath: string, options: Capture
     capturedAt: new Date().toISOString(),
     captureCount: previousCount + 1,
     commands: parsed.commands.slice(0, 50).map((c) => c.command),
+    tokens: parsed.tokens?.total ? parsed.tokens : undefined,
+    models: parsed.models && Object.keys(parsed.models).length ? parsed.models : undefined,
+    commits: commits.length ? commits : undefined,
   };
 
   const body: Omit<SessionData, 'id' | 'createdAt' | 'updatedAt'> = {
     title,
-    summary: buildSummary(parsed, cwd),
+    summary: buildSummary(parsed, cwd, commits),
     tags: buildTags(parsed, cwd, options.extraTags),
     codeContexts: buildCodeContexts(parsed, cwd, options.maxFiles ?? 40),
     designDecisions,
@@ -318,6 +466,7 @@ export async function captureTranscript(transcriptPath: string, options: Capture
   }
 
   const created = await saveSession(body);
+  if (parsed.claudeSessionId) await rememberCapture(parsed.claudeSessionId, created.id);
   captureLogger.info('Session created from transcript', { sessionId: created.id, claudeSessionId: parsed.claudeSessionId });
   return { status: 'created', sessionId: created.id, claudeSessionId: parsed.claudeSessionId, transcriptPath, title, stats, session: body };
 }
@@ -329,4 +478,83 @@ export async function captureLatestForCwd(cwd: string, options: CaptureOptions =
   const transcript = await findLatestTranscript(cwd);
   if (!transcript) return null;
   return captureTranscript(transcript, { ...options, cwd: options.cwd ?? cwd });
+}
+
+export interface SyncOptions {
+  /** Which agents' transcripts to scan. Default `all`. */
+  agent?: 'claude' | 'codex' | 'all';
+  /** Only transcripts modified within this many days. Default 30. */
+  days?: number;
+  /** Stop after this many captures (skips do not count). */
+  limit?: number;
+  dryRun?: boolean;
+  extraTags?: string[];
+  /** Called after each transcript (CLI progress). */
+  onResult?: (result: CaptureResult) => void;
+}
+
+export interface SyncResult {
+  scanned: number;
+  /** Already captured and not modified since. */
+  upToDate: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: Array<{ transcriptPath: string; error: string }>;
+  results: CaptureResult[];
+}
+
+/** Agent session id encoded in a transcript file name. */
+function idFromFileName(ref: TranscriptRef): string {
+  const base = path.basename(ref.path, '.jsonl');
+  // Codex: rollout-2026-11-23T23-48-56-<uuid>
+  return ref.source === 'codex' ? base.slice(-36) : base;
+}
+
+/**
+ * Capture every Claude Code / Codex transcript on this machine that is new or
+ * has changed since it was last captured. This is the hook-free path: run it
+ * once to backfill history, or on a schedule for agents that have no hooks.
+ */
+export async function syncTranscripts(options: SyncOptions = {}): Promise<SyncResult> {
+  const agent = options.agent ?? 'all';
+  const sinceMs = Date.now() - (options.days ?? 30) * 86_400_000;
+
+  const refs: TranscriptRef[] = [];
+  if (agent !== 'codex') refs.push(...(await listAllClaudeTranscripts(sinceMs)));
+  if (agent !== 'claude') refs.push(...(await listCodexTranscripts(sinceMs)));
+  refs.sort((a, b) => (a.modifiedAt < b.modifiedAt ? -1 : 1)); // oldest first
+
+  const { sessions } = await listSessions({ limit: 100000 });
+  const capturedAt = new Map<string, number>();
+  for (const s of sessions) {
+    const id = (s.metadata?.agentSessionId ?? s.metadata?.claudeSessionId) as string | undefined;
+    const at = typeof s.metadata?.capturedAt === 'string' ? new Date(s.metadata.capturedAt).getTime() : NaN;
+    if (id && Number.isFinite(at)) capturedAt.set(id, at);
+  }
+
+  const out: SyncResult = { scanned: refs.length, upToDate: 0, created: 0, updated: 0, skipped: 0, failed: [], results: [] };
+  let captured = 0;
+  for (const ref of refs) {
+    const last = capturedAt.get(idFromFileName(ref));
+    if (last !== undefined && new Date(ref.modifiedAt).getTime() <= last) {
+      out.upToDate += 1;
+      continue;
+    }
+    if (options.limit && captured >= options.limit) break;
+    try {
+      const result = await captureTranscript(ref.path, { hookEvent: 'sync', dryRun: options.dryRun, extraTags: options.extraTags });
+      if (result.status === 'created' || result.status === 'dry-run') out.created += 1;
+      else if (result.status === 'updated') out.updated += 1;
+      else out.skipped += 1;
+      if (result.status !== 'skipped') captured += 1;
+      // Keep the returned payload small: the full session body is in the store.
+      const slim = { ...result, session: undefined };
+      out.results.push(slim);
+      options.onResult?.(slim);
+    } catch (err) {
+      out.failed.push({ transcriptPath: ref.path, error: (err as Error).message });
+    }
+  }
+  return out;
 }

@@ -1,8 +1,8 @@
 {
   "name": "vibe-coding-mcp",
-  "version": "2.15.2",
+  "version": "2.16.0",
   "mcpName": "io.github.MUSE-CODE-SPACE/vibe-coding",
-  "description": "Auto-capture Claude Code sessions from their transcripts (hook + CLI), then summarize, digest, document, and publish them — MCP server + agent skill",
+  "description": "Local memory for AI coding sessions: auto-capture Claude Code and Codex CLI transcripts, recall earlier work per project, then digest, document and publish — MCP server + agent skill",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -41,6 +41,8 @@
     "claude",
     "claude-code",
     "claude-code-hooks",
+    "codex",
+    "session-memory",
     "agent-skills",
     "skill",
     "ai-coding",
@@ -58,11 +60,11 @@
     "url": "https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp/issues"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.1.0",
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "@notionhq/client": "^5.27.1",
+    "@anthropic-ai/sdk": "^1.14.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@notionhq/client": "^5.32.0",
     "cors": "^2.8.6",
-    "dotenv": "^18.0.8",
+    "dotenv": "^18.0.10",
     "express": "^5.3.0",
     "zod": "^4.6.7"
   },
@@ -70,13 +72,13 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.7",
     "jest": "^30.5.2",
     "ts-jest": "^29.4.15",
     "typescript": "^6.0.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "overrides": {
     "argparse": "^2.0.1"

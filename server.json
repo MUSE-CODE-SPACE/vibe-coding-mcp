@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.MUSE-CODE-SPACE/vibe-coding",
-  "description": "Auto-document vibe coding sessions - collect, summarize, and publish",
+  "description": "Local memory for Claude Code and Codex sessions: capture, recall, digest, document, publish",
   "repository": {
     "url": "https://github.com/MUSE-CODE-SPACE/vibe-coding-mcp",
     "source": "github"
   },
-  "version": "2.15.2",
+  "version": "2.16.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "vibe-coding-mcp",
-      "version": "2.15.2",
+      "version": "2.16.0",
       "transport": {
         "type": "stdio"
       }

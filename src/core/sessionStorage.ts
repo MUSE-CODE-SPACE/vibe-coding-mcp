@@ -69,6 +69,28 @@ export async function initializeStorage(customDir?: string): Promise<void> {
   }
 }
 
+/** Directory the session files live in. */
+export function getStorageDir(): string {
+  return storageDir;
+}
+
+/**
+ * Write a file atomically (temp file + rename). The Claude Code `Stop` hook
+ * runs in the background and can overlap with `SessionEnd` or a running MCP
+ * server; a plain `writeFile` lets a concurrent reader see a half-written
+ * session and treat it as missing.
+ */
+export async function writeFileAtomic(filePath: string, content: string): Promise<void> {
+  const tmp = `${filePath}.${process.pid}.${Date.now().toString(36)}.tmp`;
+  try {
+    await fs.writeFile(tmp, content, 'utf-8');
+    await fs.rename(tmp, filePath);
+  } catch (error) {
+    await fs.unlink(tmp).catch(() => undefined);
+    throw error;
+  }
+}
+
 /**
  * Generate unique session ID
  */
@@ -104,7 +126,7 @@ export async function saveSession(data: Omit<SessionData, 'id' | 'createdAt' | '
   const filePath = getSessionPath(sessionId);
 
   try {
-    await fs.writeFile(filePath, JSON.stringify(session, null, 2), 'utf-8');
+    await writeFileAtomic(filePath, JSON.stringify(session, null, 2));
     storageLogger.info('Session saved', { sessionId, title: session.title });
     return session;
   } catch (error) {
@@ -131,7 +153,7 @@ export async function updateSession(sessionId: string, updates: Partial<Omit<Ses
   const filePath = getSessionPath(sessionId);
 
   try {
-    await fs.writeFile(filePath, JSON.stringify(updated, null, 2), 'utf-8');
+    await writeFileAtomic(filePath, JSON.stringify(updated, null, 2));
     storageLogger.info('Session updated', { sessionId });
     return updated;
   } catch (error) {

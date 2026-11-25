@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-shot setup for vibe-coding-mcp inside Claude Code:
 #   1. register the MCP server (user scope)
-#   2. install the Stop + SessionEnd capture hooks
-#   3. backfill existing transcripts for the current project
+#   2. install the Stop + SessionEnd capture hooks and the SessionStart project-memory hook
+#   3. backfill existing transcripts (all projects, Claude Code + Codex, last 30 days)
 #   4. run doctor
 #
 # Usage: bash scripts/setup.sh [--project]   (--project writes hooks to .claude/settings.json)
@@ -23,14 +23,14 @@ else
   claude mcp add -s user vibe-coding-mcp -- npx -y vibe-coding-mcp
 fi
 
-echo "▶ Installing capture hooks…"
+echo "▶ Installing hooks…"
 npx -y vibe-coding-mcp init $SCOPE_FLAG
 
-echo "▶ Backfilling transcripts for $(pwd)…"
-npx -y vibe-coding-mcp capture --all || true
+echo "▶ Backfilling transcripts…"
+npx -y vibe-coding-mcp sync || true
 
 echo "▶ Doctor"
 npx -y vibe-coding-mcp doctor
 
 echo
-echo "Done. Restart Claude Code, then try: /standup  or  /weekly-report"
+echo "Done. Restart Claude Code, then try: /catch-up  /standup  /weekly-report"
